@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Log Sync</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md p-6">
+        <h1 class="text-2xl font-bold mb-4 text-blue-600">Health Log GitHub</h1>
+        
+        <div id="setupArea" class="hidden mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded">
+            <p class="text-sm mb-2">Configura il tuo GitHub Token per iniziare:</p>
+            <input type="password" id="ghToken" placeholder="Incolla Token GitHub" class="w-full p-2 border rounded mb-2">
+            <input type="text" id="ghRepo" placeholder="username/nome-repo" class="w-full p-2 border rounded mb-2">
+            <button onclick="saveSetup()" class="w-full bg-yellow-600 text-white py-1 rounded">Salva Configurazione</button>
+        </div>
+
+        <form id="healthForm" class="space-y-4 mb-6">
+            <div class="grid grid-cols-2 gap-2">
+                <input type="date" id="date" class="border rounded p-2">
+                <input type="time" id="time" class="border rounded p-2">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <input type="number" id="max" placeholder="Max" class="border rounded p-2" required>
+                <input type="number" id="min" placeholder="Min" class="border rounded p-2" required>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                <input type="number" id="bpm" placeholder="BPM" class="border rounded p-2">
+                <input type="number" step="0.1" id="temp" placeholder="°C" class="border rounded p-2">
+                <input type="number" id="spo2" placeholder="SpO2%" class="border rounded p-2">
+            </div>
+            <button type="submit" class="w-full bg-blue-500 text-white font-bold py-2 rounded">Aggiungi e Invia a GitHub</button>
+        </form>
+
+        <div id="status" class="text-xs text-gray-500 mb-2 text-center"></div>
+        <div id="recordsList" class="space-y-2 max-h-80 overflow-y-auto"></div>
+    </div>
+
+    <script>
+        let config = JSON.parse(localStorage.getItem('gh_health_config'));
+        let records = [];
+        let fileSha = "";
+
+        // Se non c'è configurazione, mostra l'area setup
+        if (!config) document.getElementById('setupArea').classList.remove('hidden');
+
+        function saveSetup() {
+            const token = document.getElementById('ghToken').value;
+            const repo = document.getElementById('ghRepo').value;
+            localStorage.setItem('gh_health_config', JSON.stringify({token, repo}));
+            location.reload();
+        }
+
+        async function ghFetch() {
+            if (!config) return;
+            const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
+            try {
+                const res = await fetch(url, { headers: { "Authorization": `token ${config.token}` } });
+                const data = await res.json();
+                fileSha = data.sha;
+                records = JSON.parse(atob(data.content));
+                render();
+            } catch (e) { document.getElementById('status').innerText = "Errore caricamento"; }
+        }
+
+        async function ghPush() {
+            document.getElementById('status').innerText = "Sincronizzazione in corso...";
+            const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
+            const body = {
+                message: "Update health data",
+                content: btoa(JSON.stringify(records, null, 2)),
+                sha: fileSha
+            };
+            const res = await fetch(url, {
+                method: "PUT",
+                headers: { "Authorization": `token ${config.token}`, "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+            if (res.ok) {
+                const data = await res.json();
+                fileSha = data.content.sha;
+                document.getElementById('status').innerText = "Sincronizzato!";
+            }
+        }
+
+        function render() {
+            const list = document.getElementById('recordsList');
+            list.innerHTML = records.map((r, i) => `
+                <div class="p-2 border-b flex justify-between items-center text-sm">
+                    <span>${r.date} ${r.time} - <b>${r.max}/${r.min}</b> (${r.bpm} bpm)</span>
+                    <button onclick="deleteRec(${i})" class="text-red-500">Elimina</button>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('healthForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const newRec = {
+                date: document.getElementById('date').value,
+                time: document.getElementById('time').value,
+                max: document.getElementById('max').value,
+                min: document.getElementById('min').value,
+                bpm: document.getElementById('bpm').value,
+                temp: document.getElementById('temp').value,
+                spo2: document.getElementById('spo2').value,
+            };
+            records.unshift(newRec); // Aggiunge in cima
+            await ghPush();
+            render();
+            e.target.reset();
+            setNow();
+        };
+
+        window.deleteRec = async (i) => {
+            if(confirm("Confermi cancellazione?")) {
+                records.splice(i, 1);
+                await ghPush();
+                render();
+            }
+        };
+
+        function setNow() {
+            const n = new Date();
+            document.getElementById('date').value = n.toISOString().split('T')[0];
+            document.getElementById('time').value = n.toTimeString().slice(0,5);
+        }
+
+        setNow();
+        ghFetch();
+    </script>
+</body>
+</html>
