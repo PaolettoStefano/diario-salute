@@ -2,40 +2,77 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Health Log Sync</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 p-4">
-    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md p-6">
-        <h1 class="text-2xl font-bold mb-4 text-blue-600">Health Log GitHub</h1>
+    <div class="max-w-md mx-auto bg-white rounded-xl shadow-lg p-6">
+        <h1 class="text-2xl font-bold mb-6 text-blue-700 border-b pb-2">Diario Salute</h1>
         
-        <div id="setupArea" class="hidden mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded">
-            <p class="text-sm mb-2">Configura il tuo GitHub Token per iniziare:</p>
-            <input type="password" id="ghToken" placeholder="Incolla Token GitHub" class="w-full p-2 border rounded mb-2">
-            <input type="text" id="ghRepo" placeholder="username/nome-repo" class="w-full p-2 border rounded mb-2">
-            <button onclick="saveSetup()" class="w-full bg-yellow-600 text-white py-1 rounded">Salva Configurazione</button>
+        <div id="setupArea" class="hidden mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <h3 class="font-bold text-yellow-800 mb-2">Configurazione GitHub</h3>
+            <label class="block text-xs font-semibold uppercase text-gray-600">Personal Access Token</label>
+            <input type="password" id="ghToken" class="w-full p-2 border rounded mb-3 focus:ring-2 focus:ring-yellow-400 outline-none">
+            
+            <label class="block text-xs font-semibold uppercase text-gray-600">Repository (utente/nome-repo)</label>
+            <input type="text" id="ghRepo" placeholder="es: mario/salute-data" class="w-full p-2 border rounded mb-4 focus:ring-2 focus:ring-yellow-400 outline-none">
+            
+            <button onclick="saveSetup()" class="w-full bg-yellow-600 text-white font-bold py-2 rounded shadow hover:bg-yellow-700 transition">
+                Salva e Connetti
+            </button>
         </div>
 
         <form id="healthForm" class="space-y-4 mb-6">
-            <div class="grid grid-cols-2 gap-2">
-                <input type="date" id="date" class="border rounded p-2">
-                <input type="time" id="time" class="border rounded p-2">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Data</label>
+                    <input type="date" id="date" class="w-full border rounded-lg p-2 bg-gray-50 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Ora</label>
+                    <input type="time" id="time" class="w-full border rounded-lg p-2 bg-gray-50 focus:border-blue-500 outline-none">
+                </div>
             </div>
-            <div class="grid grid-cols-2 gap-2">
-                <input type="number" id="max" placeholder="Max" class="border rounded p-2" required>
-                <input type="number" id="min" placeholder="Min" class="border rounded p-2" required>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Press. Max (Sist)</label>
+                    <input type="number" id="max" placeholder="120" class="w-full border rounded-lg p-2 focus:border-blue-500 outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Press. Min (Diast)</label>
+                    <input type="number" id="min" placeholder="80" class="w-full border rounded-lg p-2 focus:border-blue-500 outline-none" required>
+                </div>
             </div>
+
             <div class="grid grid-cols-3 gap-2">
-                <input type="number" id="bpm" placeholder="BPM" class="border rounded p-2">
-                <input type="number" step="0.1" id="temp" placeholder="°C" class="border rounded p-2">
-                <input type="number" id="spo2" placeholder="SpO2%" class="border rounded p-2">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">BPM</label>
+                    <input type="number" id="bpm" placeholder="70" class="w-full border rounded-lg p-2 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Temp °C</label>
+                    <input type="number" step="0.1" id="temp" placeholder="36.5" class="w-full border rounded-lg p-2 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">SpO2 %</label>
+                    <input type="number" id="spo2" placeholder="98" class="w-full border rounded-lg p-2 focus:border-blue-500 outline-none">
+                </div>
             </div>
-            <button type="submit" class="w-full bg-blue-500 text-white font-bold py-2 rounded">Aggiungi e Invia a GitHub</button>
+
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md hover:bg-blue-700 transition active:transform active:scale-95">
+                Invia a GitHub
+            </button>
         </form>
 
-        <div id="status" class="text-xs text-gray-500 mb-2 text-center"></div>
-        <div id="recordsList" class="space-y-2 max-h-80 overflow-y-auto"></div>
+        <div id="status" class="text-center text-xs font-mono text-gray-400 mb-4 h-4"></div>
+
+        <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center">
+            <span class="mr-2">📋</span> Ultime Misurazioni
+        </h2>
+        <div id="recordsList" class="space-y-3 max-h-96 overflow-y-auto pr-1">
+            </div>
     </div>
 
     <script>
@@ -43,34 +80,43 @@
         let records = [];
         let fileSha = "";
 
-        // Se non c'è configurazione, mostra l'area setup
         if (!config) document.getElementById('setupArea').classList.remove('hidden');
 
         function saveSetup() {
-            const token = document.getElementById('ghToken').value;
-            const repo = document.getElementById('ghRepo').value;
-            localStorage.setItem('gh_health_config', JSON.stringify({token, repo}));
-            location.reload();
+            const token = document.getElementById('ghToken').value.trim();
+            const repo = document.getElementById('ghRepo').value.trim();
+            if(token && repo) {
+                localStorage.setItem('gh_health_config', JSON.stringify({token, repo}));
+                location.reload();
+            }
         }
 
         async function ghFetch() {
             if (!config) return;
+            document.getElementById('status').innerText = "Caricamento...";
             const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
             try {
                 const res = await fetch(url, { headers: { "Authorization": `token ${config.token}` } });
-                const data = await res.json();
-                fileSha = data.sha;
-                records = JSON.parse(atob(data.content));
-                render();
-            } catch (e) { document.getElementById('status').innerText = "Errore caricamento"; }
+                if (res.ok) {
+                    const data = await res.json();
+                    fileSha = data.sha;
+                    records = JSON.parse(atob(data.content));
+                    render();
+                    document.getElementById('status').innerText = "Sincronizzato";
+                } else {
+                    document.getElementById('status').innerText = "Errore: Controlla configurazione";
+                }
+            } catch (e) { 
+                document.getElementById('status').innerText = "Connessione fallita";
+            }
         }
 
         async function ghPush() {
-            document.getElementById('status').innerText = "Sincronizzazione in corso...";
+            document.getElementById('status').innerText = "Salvataggio...";
             const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
             const body = {
                 message: "Update health data",
-                content: btoa(JSON.stringify(records, null, 2)),
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(records, null, 2)))),
                 sha: fileSha
             };
             const res = await fetch(url, {
@@ -81,16 +127,32 @@
             if (res.ok) {
                 const data = await res.json();
                 fileSha = data.content.sha;
-                document.getElementById('status').innerText = "Sincronizzato!";
+                document.getElementById('status').innerText = "Salvato con successo!";
+                setTimeout(() => { document.getElementById('status').innerText = "Sincronizzato"; }, 3000);
             }
         }
 
         function render() {
             const list = document.getElementById('recordsList');
+            if (records.length === 0) {
+                list.innerHTML = `<p class="text-center text-gray-400 text-sm py-4">Nessun dato presente</p>`;
+                return;
+            }
             list.innerHTML = records.map((r, i) => `
-                <div class="p-2 border-b flex justify-between items-center text-sm">
-                    <span>${r.date} ${r.time} - <b>${r.max}/${r.min}</b> (${r.bpm} bpm)</span>
-                    <button onclick="deleteRec(${i})" class="text-red-500">Elimina</button>
+                <div class="p-3 border rounded-lg bg-gray-50 shadow-sm flex justify-between items-center border-l-4 ${r.max > 140 ? 'border-l-red-500' : 'border-l-green-500'}">
+                    <div class="text-sm">
+                        <div class="text-xs text-gray-500 font-bold">${r.date} alle ${r.time}</div>
+                        <div class="text-gray-800">
+                            <span class="text-lg font-bold">${r.max}/${r.min}</span> <span class="text-xs text-gray-400">mmHg</span> 
+                            | <span class="font-semibold text-blue-600">${r.bpm}</span> <span class="text-xs text-gray-400">BPM</span>
+                        </div>
+                        <div class="text-xs text-gray-600 mt-1">
+                            Temp: ${r.temp}°C | SpO2: ${r.spo2}%
+                        </div>
+                    </div>
+                    <button onclick="deleteRec(${i})" class="bg-red-50 text-red-500 p-2 rounded-full hover:bg-red-100 transition">
+                        🗑️
+                    </button>
                 </div>
             `).join('');
         }
@@ -106,7 +168,7 @@
                 temp: document.getElementById('temp').value,
                 spo2: document.getElementById('spo2').value,
             };
-            records.unshift(newRec); // Aggiunge in cima
+            records.unshift(newRec); 
             await ghPush();
             render();
             e.target.reset();
@@ -114,7 +176,7 @@
         };
 
         window.deleteRec = async (i) => {
-            if(confirm("Confermi cancellazione?")) {
+            if(confirm("Vuoi eliminare definitivamente questo record?")) {
                 records.splice(i, 1);
                 await ghPush();
                 render();
