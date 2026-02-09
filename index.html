@@ -6,72 +6,79 @@
     <title>Health Log Sync</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 p-4">
-    <div class="max-w-md mx-auto bg-white rounded-xl shadow-lg p-6">
-        <h1 class="text-2xl font-bold mb-6 text-blue-700 border-b pb-2">Diario Salute</h1>
+<body class="bg-gray-100 p-4 font-sans">
+    <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl p-6">
+        <h1 class="text-2xl font-bold mb-6 text-blue-700 border-b pb-2 flex items-center">
+            🩺 Diario Salute
+        </h1>
         
-        <div id="setupArea" class="hidden mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <h3 class="font-bold text-yellow-800 mb-2">Configurazione GitHub</h3>
-            <label class="block text-xs font-semibold uppercase text-gray-600">Personal Access Token</label>
-            <input type="password" id="ghToken" class="w-full p-2 border rounded mb-3 focus:ring-2 focus:ring-yellow-400 outline-none">
-            
-            <label class="block text-xs font-semibold uppercase text-gray-600">Repository (utente/nome-repo)</label>
-            <input type="text" id="ghRepo" placeholder="es: mario/salute-data" class="w-full p-2 border rounded mb-4 focus:ring-2 focus:ring-yellow-400 outline-none">
-            
-            <button onclick="saveSetup()" class="w-full bg-yellow-600 text-white font-bold py-2 rounded shadow hover:bg-yellow-700 transition">
-                Salva e Connetti
-            </button>
-        </div>
-
-        <form id="healthForm" class="space-y-4 mb-6">
-            <div class="grid grid-cols-2 gap-4">
+        <div id="setupArea" class="hidden mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+            <h3 class="font-bold text-blue-800 mb-3 text-sm">Configurazione Iniziale GitHub</h3>
+            <div class="space-y-3">
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Data</label>
-                    <input type="date" id="date" class="w-full border rounded-lg p-2 bg-gray-50 focus:border-blue-500 outline-none">
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Personal Access Token</label>
+                    <input type="password" id="ghToken" class="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-400">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Ora</label>
-                    <input type="time" id="time" class="w-full border rounded-lg p-2 bg-gray-50 focus:border-blue-500 outline-none">
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Repository (utente/nome-repo)</label>
+                    <input type="text" id="ghRepo" placeholder="es: mario/salute-dati" class="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-400">
+                </div>
+                <button onclick="saveSetup()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition shadow">
+                    Connetti Repository
+                </button>
+            </div>
+        </div>
+
+        <form id="healthForm" class="space-y-4 mb-8 bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-inner">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Data</label>
+                    <input type="date" id="date" class="w-full border rounded-lg p-2 text-sm focus:border-blue-500 outline-none shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Ora</label>
+                    <input type="time" id="time" class="w-full border rounded-lg p-2 text-sm focus:border-blue-500 outline-none shadow-sm">
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Press. Max (Sist)</label>
-                    <input type="number" id="max" placeholder="120" class="w-full border rounded-lg p-2 focus:border-blue-500 outline-none" required>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Press. Max (Sist)</label>
+                    <input type="number" id="max" placeholder="120" class="w-full border rounded-lg p-2 text-sm focus:border-blue-500 outline-none" required>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Press. Min (Diast)</label>
-                    <input type="number" id="min" placeholder="80" class="w-full border rounded-lg p-2 focus:border-blue-500 outline-none" required>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Press. Min (Diast)</label>
+                    <input type="number" id="min" placeholder="80" class="w-full border rounded-lg p-2 text-sm focus:border-blue-500 outline-none" required>
                 </div>
             </div>
 
             <div class="grid grid-cols-3 gap-2">
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">BPM</label>
-                    <input type="number" id="bpm" placeholder="70" class="w-full border rounded-lg p-2 focus:border-blue-500 outline-none">
+                    <label class="block text-[10px] font-bold text-gray-600 mb-1 uppercase">Battiti BPM</label>
+                    <input type="number" id="bpm" placeholder="70" class="w-full border rounded-lg p-2 text-sm focus:border-blue-500 outline-none" required>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Temp °C</label>
-                    <input type="number" step="0.1" id="temp" placeholder="36.5" class="w-full border rounded-lg p-2 focus:border-blue-500 outline-none">
+                    <label class="block text-[10px] font-bold text-gray-600 mb-1 uppercase">Temp. °C</label>
+                    <input type="number" step="0.1" id="temp" placeholder="36.5" class="w-full border rounded-lg p-2 text-sm focus:border-blue-500 outline-none" required>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">SpO2 %</label>
-                    <input type="number" id="spo2" placeholder="98" class="w-full border rounded-lg p-2 focus:border-blue-500 outline-none">
+                    <label class="block text-[10px] font-bold text-gray-600 mb-1 uppercase">Saturaz. %</label>
+                    <input type="number" id="spo2" placeholder="98" class="w-full border rounded-lg p-2 text-sm focus:border-blue-500 outline-none" required>
                 </div>
             </div>
 
-            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md hover:bg-blue-700 transition active:transform active:scale-95">
-                Invia a GitHub
+            <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl shadow-md hover:bg-green-700 transition active:scale-95">
+                Salva Record
             </button>
         </form>
 
-        <div id="status" class="text-center text-xs font-mono text-gray-400 mb-4 h-4"></div>
+        <div id="status" class="text-center text-[10px] font-mono text-gray-400 mb-4 h-4 uppercase tracking-tighter"></div>
 
-        <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center">
-            <span class="mr-2">📋</span> Ultime Misurazioni
+        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+            📋 Storico Misurazioni
         </h2>
-        <div id="recordsList" class="space-y-3 max-h-96 overflow-y-auto pr-1">
+        
+        <div id="recordsList" class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
             </div>
     </div>
 
@@ -93,7 +100,7 @@
 
         async function ghFetch() {
             if (!config) return;
-            document.getElementById('status').innerText = "Caricamento...";
+            document.getElementById('status').innerText = "🔄 Caricamento dati...";
             const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
             try {
                 const res = await fetch(url, { headers: { "Authorization": `token ${config.token}` } });
@@ -102,20 +109,20 @@
                     fileSha = data.sha;
                     records = JSON.parse(atob(data.content));
                     render();
-                    document.getElementById('status').innerText = "Sincronizzato";
+                    document.getElementById('status').innerText = "✅ Sincronizzato";
                 } else {
-                    document.getElementById('status').innerText = "Errore: Controlla configurazione";
+                    document.getElementById('status').innerText = "❌ Errore: File non trovato o Token errato";
                 }
             } catch (e) { 
-                document.getElementById('status').innerText = "Connessione fallita";
+                document.getElementById('status').innerText = "⚠️ Errore di connessione";
             }
         }
 
         async function ghPush() {
-            document.getElementById('status').innerText = "Salvataggio...";
+            document.getElementById('status').innerText = "⏳ Invio a GitHub...";
             const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
             const body = {
-                message: "Update health data",
+                message: "Aggiornamento dati salute",
                 content: btoa(unescape(encodeURIComponent(JSON.stringify(records, null, 2)))),
                 sha: fileSha
             };
@@ -127,32 +134,49 @@
             if (res.ok) {
                 const data = await res.json();
                 fileSha = data.content.sha;
-                document.getElementById('status').innerText = "Salvato con successo!";
-                setTimeout(() => { document.getElementById('status').innerText = "Sincronizzato"; }, 3000);
+                document.getElementById('status').innerText = "✅ Salvato con successo!";
+                setTimeout(() => { document.getElementById('status').innerText = "✅ Sincronizzato"; }, 3000);
             }
         }
 
         function render() {
             const list = document.getElementById('recordsList');
             if (records.length === 0) {
-                list.innerHTML = `<p class="text-center text-gray-400 text-sm py-4">Nessun dato presente</p>`;
+                list.innerHTML = `<p class="text-center text-gray-400 text-sm py-4 italic">Nessun record trovato</p>`;
                 return;
             }
+
             list.innerHTML = records.map((r, i) => `
-                <div class="p-3 border rounded-lg bg-gray-50 shadow-sm flex justify-between items-center border-l-4 ${r.max > 140 ? 'border-l-red-500' : 'border-l-green-500'}">
-                    <div class="text-sm">
-                        <div class="text-xs text-gray-500 font-bold">${r.date} alle ${r.time}</div>
-                        <div class="text-gray-800">
-                            <span class="text-lg font-bold">${r.max}/${r.min}</span> <span class="text-xs text-gray-400">mmHg</span> 
-                            | <span class="font-semibold text-blue-600">${r.bpm}</span> <span class="text-xs text-gray-400">BPM</span>
+                <div class="p-4 border rounded-xl bg-white shadow-sm border-l-4 ${r.max > 140 ? 'border-l-red-500' : 'border-l-green-500'}">
+                    <div class="flex justify-between items-center mb-3 border-b border-gray-100 pb-2">
+                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                            📅 ${r.date} — 🕒 ${r.time}
+                        </span>
+                        <button onclick="deleteRec(${i})" class="text-red-400 hover:text-red-600 transition text-xs font-bold uppercase">
+                            Elimina 🗑️
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-[9px] text-gray-400 uppercase font-bold block">Pressione</span>
+                            <span class="text-xl font-black text-gray-800">${r.max}/${r.min}</span>
+                            <span class="text-[10px] text-gray-400">mmHg</span>
                         </div>
-                        <div class="text-xs text-gray-600 mt-1">
-                            Temp: ${r.temp}°C | SpO2: ${r.spo2}%
+                        <div>
+                            <span class="text-[9px] text-gray-400 uppercase font-bold block">Battiti</span>
+                            <span class="text-xl font-black text-red-500">${r.bpm}</span>
+                            <span class="text-[10px] text-gray-400">BPM</span>
+                        </div>
+                        <div>
+                            <span class="text-[9px] text-gray-400 uppercase font-bold block">Temperatura</span>
+                            <span class="text-md font-bold text-orange-500">${r.temp}°C</span>
+                        </div>
+                        <div>
+                            <span class="text-[9px] text-gray-400 uppercase font-bold block">Saturazione</span>
+                            <span class="text-md font-bold text-blue-500">${r.spo2}% SpO2</span>
                         </div>
                     </div>
-                    <button onclick="deleteRec(${i})" class="bg-red-50 text-red-500 p-2 rounded-full hover:bg-red-100 transition">
-                        🗑️
-                    </button>
                 </div>
             `).join('');
         }
