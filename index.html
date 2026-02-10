@@ -3,83 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Health Log Sync</title>
+    <title>Health Log Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Scrollbar personalizzata per un look più pulito */
+        #recordsList::-webkit-scrollbar { width: 6px; }
+        #recordsList::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
 </head>
-<body class="bg-gray-100 p-4 font-sans">
-    <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl p-6">
-        <h1 class="text-2xl font-bold mb-6 text-blue-700 border-b pb-2 flex items-center">
-            🩺 Diario Salute
-        </h1>
+<body class="bg-slate-50 font-sans min-h-screen text-slate-900">
+
+    <div class="max-w-6xl mx-auto p-4 md:p-8">
         
-        <div id="setupArea" class="hidden mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-            <h3 class="font-bold text-blue-800 mb-3 text-sm">Configurazione Iniziale GitHub</h3>
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Personal Access Token</label>
-                    <input type="password" id="ghToken" class="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-400">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Repository (utente/nome-repo)</label>
-                    <input type="text" id="ghRepo" placeholder="es: mario/salute-dati" class="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-400">
-                </div>
-                <button onclick="saveSetup()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition shadow">
-                    Connetti Repository
-                </button>
+        <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <h1 class="text-3xl font-extrabold text-blue-800 flex items-center">
+                <span class="mr-3">🩺</span> Diario Salute <span class="ml-2 text-sm font-normal text-blue-500 bg-blue-100 px-2 py-1 rounded-full uppercase tracking-tighter">Sync</span>
+            </h1>
+            <div id="status" class="text-[10px] md:text-xs font-mono text-slate-400 uppercase tracking-widest bg-white px-3 py-2 rounded-lg shadow-sm border border-slate-100">
+                Inizializzazione...
+            </div>
+        </header>
+
+        <div id="setupArea" class="hidden mb-8 p-6 bg-white border-2 border-dashed border-blue-200 rounded-2xl shadow-sm">
+            <h3 class="font-bold text-blue-800 mb-4 flex items-center">⚙️ Configurazione GitHub</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="password" id="ghToken" placeholder="Personal Access Token" class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none">
+                <input type="text" id="ghRepo" placeholder="utente/nome-repo" class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none">
+                <button onclick="saveSetup()" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-700 transition active:scale-95">Connetti</button>
             </div>
         </div>
 
-        <form id="healthForm" class="space-y-4 mb-8 bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-inner">
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 mb-1">Data</label>
-                    <input type="date" id="date" class="w-full border rounded-lg p-2 text-sm focus:border-blue-500 outline-none shadow-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 mb-1">Ora</label>
-                    <input type="time" id="time" class="w-full border rounded-lg p-2 text-sm focus:border-blue-500 outline-none shadow-sm">
-                </div>
-            </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <aside class="lg:col-span-4">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 sticky top-8">
+                    <h2 class="text-lg font-bold mb-5 text-slate-700">Nuova Misurazione</h2>
+                    <form id="healthForm" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="col-span-1">
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data</label>
+                                <input type="date" id="date" class="w-full border-slate-200 border rounded-xl p-3 text-sm focus:border-blue-500 outline-none">
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Ora</label>
+                                <input type="time" id="time" class="w-full border-slate-200 border rounded-xl p-3 text-sm focus:border-blue-500 outline-none">
+                            </div>
+                        </div>
 
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 mb-1">Press. Max (Sist)</label>
-                    <input type="number" id="max" placeholder="120" class="w-full border rounded-lg p-2 text-sm focus:border-blue-500 outline-none" required>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 mb-1">Press. Min (Diast)</label>
-                    <input type="number" id="min" placeholder="80" class="w-full border rounded-lg p-2 text-sm focus:border-blue-500 outline-none" required>
-                </div>
-            </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
+                                <label class="block text-[10px] font-bold text-blue-600 uppercase mb-1">Sistolica (Max)</label>
+                                <input type="number" id="max" placeholder="120" class="w-full bg-transparent text-lg font-bold outline-none" required>
+                            </div>
+                            <div class="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
+                                <label class="block text-[10px] font-bold text-blue-600 uppercase mb-1">Diastolica (Min)</label>
+                                <input type="number" id="min" placeholder="80" class="w-full bg-transparent text-lg font-bold outline-none" required>
+                            </div>
+                        </div>
 
-            <div class="grid grid-cols-3 gap-2">
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-600 mb-1 uppercase">Battiti BPM</label>
-                    <input type="number" id="bpm" placeholder="70" class="w-full border rounded-lg p-2 text-sm focus:border-blue-500 outline-none" required>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-600 mb-1 uppercase">Temp. °C</label>
-                    <input type="number" step="0.1" id="temp" placeholder="36.5" class="w-full border rounded-lg p-2 text-sm focus:border-blue-500 outline-none" required>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-600 mb-1 uppercase">Saturaz. %</label>
-                    <input type="number" id="spo2" placeholder="98" class="w-full border rounded-lg p-2 text-sm focus:border-blue-500 outline-none" required>
-                </div>
-            </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="p-2 border border-slate-100 rounded-xl">
+                                <label class="block text-[9px] font-bold text-slate-400 uppercase">BPM</label>
+                                <input type="number" id="bpm" placeholder="70" class="w-full text-sm font-bold outline-none" required>
+                            </div>
+                            <div class="p-2 border border-slate-100 rounded-xl">
+                                <label class="block text-[9px] font-bold text-slate-400 uppercase">Temp °C</label>
+                                <input type="number" step="0.1" id="temp" placeholder="36.5" class="w-full text-sm font-bold outline-none" required>
+                            </div>
+                            <div class="p-2 border border-slate-100 rounded-xl">
+                                <label class="block text-[9px] font-bold text-slate-400 uppercase">SpO2 %</label>
+                                <input type="number" id="spo2" placeholder="98" class="w-full text-sm font-bold outline-none" required>
+                            </div>
+                        </div>
 
-            <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl shadow-md hover:bg-green-700 transition active:scale-95">
-                Salva Record
-            </button>
-        </form>
+                        <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition active:scale-95 flex justify-center items-center gap-2">
+                            <span>Registra Dati</span>
+                        </button>
+                    </form>
+                </div>
+            </aside>
 
-        <div id="status" class="text-center text-[10px] font-mono text-gray-400 mb-4 h-4 uppercase tracking-tighter"></div>
-
-        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-            📋 Storico Misurazioni
-        </h2>
-        
-        <div id="recordsList" class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
-            </div>
+            <main class="lg:col-span-8">
+                <div class="flex items-center justify-between mb-4 px-2">
+                    <h2 class="text-xl font-bold text-slate-800 italic">Cronologia Misurazioni</h2>
+                    <span class="text-xs text-slate-400">Tutti i dati sono salvati su GitHub</span>
+                </div>
+                
+                <div id="recordsList" class="space-y-4 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 pb-10">
+                    </div>
+            </main>
+        </div>
     </div>
 
     <script>
@@ -100,7 +113,7 @@
 
         async function ghFetch() {
             if (!config) return;
-            document.getElementById('status').innerText = "🔄 Caricamento dati...";
+            setStatus("🔄 Sincronizzazione...");
             const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
             try {
                 const res = await fetch(url, { headers: { "Authorization": `token ${config.token}` } });
@@ -109,72 +122,86 @@
                     fileSha = data.sha;
                     records = JSON.parse(atob(data.content));
                     render();
-                    document.getElementById('status').innerText = "✅ Sincronizzato";
+                    setStatus("✅ Dati aggiornati");
                 } else {
-                    document.getElementById('status').innerText = "❌ Errore: File non trovato o Token errato";
+                    setStatus("❌ Errore Configurazione");
                 }
             } catch (e) { 
-                document.getElementById('status').innerText = "⚠️ Errore di connessione";
+                setStatus("⚠️ Connessione Assente");
             }
         }
 
         async function ghPush() {
-            document.getElementById('status').innerText = "⏳ Invio a GitHub...";
+            setStatus("⏳ Cloud Sync...");
             const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
             const body = {
-                message: "Aggiornamento dati salute",
+                message: "Aggiornamento salute " + new Date().toLocaleString(),
                 content: btoa(unescape(encodeURIComponent(JSON.stringify(records, null, 2)))),
                 sha: fileSha
             };
-            const res = await fetch(url, {
-                method: "PUT",
-                headers: { "Authorization": `token ${config.token}`, "Content-Type": "application/json" },
-                body: JSON.stringify(body)
-            });
-            if (res.ok) {
-                const data = await res.json();
-                fileSha = data.content.sha;
-                document.getElementById('status').innerText = "✅ Salvato con successo!";
-                setTimeout(() => { document.getElementById('status').innerText = "✅ Sincronizzato"; }, 3000);
+            try {
+                const res = await fetch(url, {
+                    method: "PUT",
+                    headers: { "Authorization": `token ${config.token}`, "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    fileSha = data.content.sha;
+                    setStatus("✅ Salvataggio riuscito");
+                    setTimeout(() => setStatus("✅ Sincronizzato"), 3000);
+                }
+            } catch(e) {
+                setStatus("❌ Errore durante il salvataggio");
             }
+        }
+
+        function setStatus(text) {
+            document.getElementById('status').innerText = text;
         }
 
         function render() {
             const list = document.getElementById('recordsList');
             if (records.length === 0) {
-                list.innerHTML = `<p class="text-center text-gray-400 text-sm py-4 italic">Nessun record trovato</p>`;
+                list.innerHTML = `<div class="col-span-2 p-10 text-center text-slate-400 bg-white rounded-3xl border border-dashed">Nessun dato registrato.</div>`;
                 return;
             }
 
             list.innerHTML = records.map((r, i) => `
-                <div class="p-4 border rounded-xl bg-white shadow-sm border-l-4 ${r.max > 140 ? 'border-l-red-500' : 'border-l-green-500'}">
-                    <div class="flex justify-between items-center mb-3 border-b border-gray-100 pb-2">
-                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                            📅 ${r.date} — 🕒 ${r.time}
-                        </span>
-                        <button onclick="deleteRec(${i})" class="text-red-400 hover:text-red-600 transition text-xs font-bold uppercase">
-                            Elimina 🗑️
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md transition group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">${r.date}</p>
+                            <p class="text-lg font-bold text-slate-700">${r.time}</p>
+                        </div>
+                        <button onclick="deleteRec(${i})" class="opacity-0 group-hover:opacity-100 transition p-2 bg-red-50 text-red-500 rounded-full hover:bg-red-500 hover:text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
                         </button>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <span class="text-[9px] text-gray-400 uppercase font-bold block">Pressione</span>
-                            <span class="text-xl font-black text-gray-800">${r.max}/${r.min}</span>
-                            <span class="text-[10px] text-gray-400">mmHg</span>
+                        <div class="col-span-1">
+                            <span class="text-[9px] text-slate-400 uppercase font-bold block">Pressione</span>
+                            <span class="text-2xl font-black text-blue-900">${r.max}/${r.min}</span>
+                            <span class="text-xs text-slate-400 italic">mmHg</span>
                         </div>
-                        <div>
-                            <span class="text-[9px] text-gray-400 uppercase font-bold block">Battiti</span>
-                            <span class="text-xl font-black text-red-500">${r.bpm}</span>
-                            <span class="text-[10px] text-gray-400">BPM</span>
+                        <div class="col-span-1 border-l pl-4 border-slate-100">
+                            <span class="text-[9px] text-slate-400 uppercase font-bold block">Battiti</span>
+                            <span class="text-2xl font-black text-red-500">${r.bpm}</span>
+                            <span class="text-xs text-slate-400 italic">BPM</span>
                         </div>
-                        <div>
-                            <span class="text-[9px] text-gray-400 uppercase font-bold block">Temperatura</span>
-                            <span class="text-md font-bold text-orange-500">${r.temp}°C</span>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-slate-50 grid grid-cols-2 gap-2 text-sm font-medium">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-orange-400"></span>
+                            <span class="text-slate-600">${r.temp}°C</span>
                         </div>
-                        <div>
-                            <span class="text-[9px] text-gray-400 uppercase font-bold block">Saturazione</span>
-                            <span class="text-md font-bold text-blue-500">${r.spo2}% SpO2</span>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                            <span class="text-slate-600">${r.spo2}% SpO2</span>
                         </div>
                     </div>
                 </div>
@@ -193,17 +220,17 @@
                 spo2: document.getElementById('spo2').value,
             };
             records.unshift(newRec); 
-            await ghPush();
             render();
+            await ghPush();
             e.target.reset();
             setNow();
         };
 
         window.deleteRec = async (i) => {
-            if(confirm("Vuoi eliminare definitivamente questo record?")) {
+            if(confirm("Eliminare definitivamente questa misurazione?")) {
                 records.splice(i, 1);
-                await ghPush();
                 render();
+                await ghPush();
             }
         };
 
