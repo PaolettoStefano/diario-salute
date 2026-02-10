@@ -74,7 +74,7 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-3 gap-2">
+                        <div class="grid grid-cols-2 gap-2">
                             <div class="p-2 border border-slate-100 rounded-xl">
                                 <label class="block text-[9px] font-bold text-slate-400 uppercase">BPM</label>
                                 <input type="number" id="bpm" placeholder="70" class="w-full text-sm font-bold outline-none" required>
@@ -86,6 +86,10 @@
                             <div class="p-2 border border-slate-100 rounded-xl">
                                 <label class="block text-[9px] font-bold text-slate-400 uppercase">SpO2 %</label>
                                 <input type="number" id="spo2" placeholder="98" class="w-full text-sm font-bold outline-none" required>
+                            </div>
+                            <div class="p-2 border border-slate-100 rounded-xl">
+                                <label class="block text-[9px] font-bold text-slate-400 uppercase">Pulsazioni</label>
+                                <input type="number" id="puls" placeholder="72" class="w-full text-sm font-bold outline-none" required>
                             </div>
                         </div>
 
@@ -114,6 +118,7 @@
                                     <th class="p-4 text-[10px] font-bold text-red-500 uppercase tracking-wider text-center">BPM</th>
                                     <th class="p-4 text-[10px] font-bold text-orange-500 uppercase tracking-wider text-center">T.</th>
                                     <th class="p-4 text-[10px] font-bold text-cyan-600 uppercase tracking-wider text-center">O2</th>
+                                    <th class="p-4 text-[10px] font-bold text-indigo-600 uppercase tracking-wider text-center">Puls.</th>
                                     <th class="p-4"></th>
                                 </tr>
                             </thead>
@@ -205,7 +210,7 @@
         function render() {
             const list = document.getElementById('recordsList');
             if (records.length === 0) {
-                list.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-slate-400 italic">Nessun dato registrato.</td></tr>`;
+                list.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-slate-400 italic">Nessun dato registrato.</td></tr>`;
                 return;
             }
 
@@ -233,6 +238,9 @@
                     </td>
                     <td class="p-3 text-center">
                         <span class="text-xs font-semibold ${spo2Color}">${r.spo2}%</span>
+                    </td>
+                    <td class="p-3 text-center">
+                        <span class="text-sm font-bold text-indigo-600">${r.puls || '-'}</span>
                     </td>
                     <td class="p-3 text-right">
                         <div class="flex justify-end gap-1">
@@ -290,6 +298,7 @@
             document.getElementById('bpm').value = r.bpm;
             document.getElementById('temp').value = r.temp;
             document.getElementById('spo2').value = r.spo2;
+            document.getElementById('puls').value = r.puls || "";
             
             document.getElementById('formTitle').innerText = "Modifica Dati";
             document.getElementById('submitBtnText').innerText = "Salva Modifiche";
@@ -318,6 +327,7 @@
                 bpm: document.getElementById('bpm').value,
                 temp: document.getElementById('temp').value,
                 spo2: document.getElementById('spo2').value,
+                puls: document.getElementById('puls').value,
             };
 
             if (index === -1) {
@@ -347,8 +357,8 @@
 
         function exportCSV() {
             if (records.length === 0) return;
-            const headers = "Data,Ora,Sistolica,Diastolica,BPM,Temp,SpO2\n";
-            const rows = records.map(r => `${r.date},${r.time},${r.max},${r.min},${r.bpm},${r.temp},${r.spo2}`).join("\n");
+            const headers = "Data,Ora,Sistolica,Diastolica,BPM,Temp,SpO2,Pulsazioni\n";
+            const rows = records.map(r => `${r.date},${r.time},${r.max},${r.min},${r.bpm},${r.temp},${r.spo2},${r.puls || ''}`).join("\n");
             const blob = new Blob([headers + rows], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
