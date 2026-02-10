@@ -20,7 +20,7 @@
         
         <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <h1 class="text-3xl font-extrabold text-blue-800 flex items-center">
-                <span class="mr-3">🩺</span> Diario Salute <span class="ml-2 text-sm font-normal text-blue-500 bg-blue-100 px-2 py-1 rounded-full uppercase tracking-tighter">List View</span>
+                <span class="mr-3">|🩺</span> Diario Salute <span class="ml-2 text-sm font-normal text-blue-500 bg-blue-100 px-2 py-1 rounded-full uppercase tracking-tighter">List View</span>
             </h1>
             <div id="status" class="flex items-center text-[10px] md:text-xs font-mono text-slate-500 uppercase tracking-widest bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100">
                 <span id="statusDot" class="status-dot bg-slate-300"></span>
@@ -37,15 +37,18 @@
             </div>
         </div>
 
-        <div id="statsSummary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 hidden">
-            </div>
+        <div id="statsSummary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 hidden"></div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
             <aside class="lg:col-span-4">
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 sticky top-8">
-                    <h2 class="text-lg font-bold mb-5 text-slate-700">Nuova Misurazione</h2>
+                    <div class="flex justify-between items-center mb-5">
+                        <h2 id="formTitle" class="text-lg font-bold text-slate-700">Nuova Misurazione</h2>
+                        <button id="cancelEdit" onclick="resetForm()" class="hidden text-xs text-red-500 font-bold uppercase">Annulla</button>
+                    </div>
                     <form id="healthForm" class="space-y-4">
+                        <input type="hidden" id="editIndex" value="-1">
                         <div class="grid grid-cols-2 gap-3">
                             <div class="col-span-1">
                                 <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data</label>
@@ -83,8 +86,8 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition active:scale-95 flex justify-center items-center gap-2">
-                            <span>Registra Dati</span>
+                        <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition active:scale-95 flex justify-center items-center gap-2">
+                            <span id="submitBtnText">Registra Dati</span>
                         </button>
                     </form>
                 </div>
@@ -92,7 +95,7 @@
 
             <main class="lg:col-span-8">
                 <div class="flex items-center justify-between mb-4 px-2">
-                    <h2 class="text-xl font-bold text-slate-800 italic text-sm">Cronologia Misurazioni</h2>
+                    <h2 class="text-xl font-bold text-slate-800 italic">Cronologia Misurazioni</h2>
                     <button onclick="exportCSV()" class="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1">
                         📥 Esporta CSV
                     </button>
@@ -186,13 +189,7 @@
             const txt = document.getElementById('statusText');
             txt.innerText = text;
             txt.className = isSyncing ? "syncing" : "";
-            const colors = {
-                blue: "bg-blue-500",
-                green: "bg-green-500",
-                red: "bg-red-500",
-                orange: "bg-orange-500",
-                slate: "bg-slate-300"
-            };
+            const colors = { blue: "bg-blue-500", green: "bg-green-500", red: "bg-red-500", orange: "bg-orange-500", slate: "bg-slate-300" };
             dot.className = `status-dot ${colors[color] || colors.slate}`;
         }
 
@@ -235,11 +232,18 @@
                         <span class="text-sm font-semibold ${spo2Color}">${r.spo2}%</span>
                     </td>
                     <td class="p-4 text-right">
-                        <button onclick="deleteRec(${i})" class="opacity-0 group-hover:opacity-100 transition p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-500 hover:text-white">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </button>
+                        <div class="flex justify-end gap-2">
+                            <button onclick="editRec(${i})" class="opacity-0 group-hover:opacity-100 transition p-2 bg-blue-50 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                            </button>
+                            <button onclick="deleteRec(${i})" class="opacity-0 group-hover:opacity-100 transition p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-500 hover:text-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
                     </td>
                 </tr>`;
             }).join('');
@@ -273,20 +277,35 @@
             `;
         }
 
-        function exportCSV() {
-            if (records.length === 0) return;
-            const headers = "Data,Ora,Sistolica,Diastolica,BPM,Temp,SpO2\n";
-            const rows = records.map(r => `${r.date},${r.time},${r.max},${r.min},${r.bpm},${r.temp},${r.spo2}`).join("\n");
-            const blob = new Blob([headers + rows], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `salute_export_${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
+        function editRec(index) {
+            const r = records[index];
+            document.getElementById('editIndex').value = index;
+            document.getElementById('date').value = r.date;
+            document.getElementById('time').value = r.time;
+            document.getElementById('max').value = r.max;
+            document.getElementById('min').value = r.min;
+            document.getElementById('bpm').value = r.bpm;
+            document.getElementById('temp').value = r.temp;
+            document.getElementById('spo2').value = r.spo2;
+            
+            document.getElementById('formTitle').innerText = "Modifica Misurazione";
+            document.getElementById('submitBtnText').innerText = "Aggiorna Dati";
+            document.getElementById('cancelEdit').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            document.getElementById('healthForm').reset();
+            document.getElementById('editIndex').value = "-1";
+            document.getElementById('formTitle').innerText = "Nuova Misurazione";
+            document.getElementById('submitBtnText').innerText = "Registra Dati";
+            document.getElementById('cancelEdit').classList.add('hidden');
+            setNow();
         }
 
         document.getElementById('healthForm').onsubmit = async (e) => {
             e.preventDefault();
+            const index = parseInt(document.getElementById('editIndex').value);
             const newRec = {
                 date: document.getElementById('date').value,
                 time: document.getElementById('time').value,
@@ -296,11 +315,16 @@
                 temp: document.getElementById('temp').value,
                 spo2: document.getElementById('spo2').value,
             };
-            records.unshift(newRec); 
+
+            if (index === -1) {
+                records.unshift(newRec); 
+            } else {
+                records[index] = newRec;
+            }
+
             render();
             await ghPush();
-            e.target.reset();
-            setNow();
+            resetForm();
         };
 
         window.deleteRec = async (i) => {
@@ -315,6 +339,18 @@
             const n = new Date();
             document.getElementById('date').value = n.toISOString().split('T')[0];
             document.getElementById('time').value = n.toTimeString().slice(0,5);
+        }
+
+        function exportCSV() {
+            if (records.length === 0) return;
+            const headers = "Data,Ora,Sistolica,Diastolica,BPM,Temp,SpO2\n";
+            const rows = records.map(r => `${r.date},${r.time},${r.max},${r.min},${r.bpm},${r.temp},${r.spo2}`).join("\n");
+            const blob = new Blob([headers + rows], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `salute_export_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
         }
 
         setNow();
