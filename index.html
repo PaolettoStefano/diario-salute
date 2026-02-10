@@ -9,6 +9,16 @@
         /* Scrollbar personalizzata per un look più pulito */
         #recordsList::-webkit-scrollbar { width: 6px; }
         #recordsList::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        /* Animazione di caricamento */
+        .loader {
+            border-top-color: #3b82f6;
+            animation: spinner 0.6s linear infinite;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-slate-50 font-sans min-h-screen text-slate-900">
@@ -16,21 +26,32 @@
     <div class="max-w-6xl mx-auto p-4 md:p-8">
         
         <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <h1 class="text-3xl font-extrabold text-blue-800 flex items-center">
-                <span class="mr-3">🩺</span> Diario Salute <span class="ml-2 text-sm font-normal text-blue-500 bg-blue-100 px-2 py-1 rounded-full uppercase tracking-tighter">Sync</span>
-            </h1>
-            <div id="status" class="text-[10px] md:text-xs font-mono text-slate-400 uppercase tracking-widest bg-white px-3 py-2 rounded-lg shadow-sm border border-slate-100">
-                Inizializzazione...
+            <div>
+                <h1 class="text-3xl font-extrabold text-blue-800 flex items-center">
+                    <span class="mr-3">🩺</span> Diario Salute <span class="ml-2 text-sm font-normal text-blue-500 bg-blue-100 px-2 py-1 rounded-full uppercase tracking-tighter">Sync</span>
+                </h1>
+                <p class="text-slate-500 text-sm mt-1">Monitoraggio parametri vitali con backup Cloud</p>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+                <div id="status" class="text-[10px] md:text-xs font-mono text-slate-400 uppercase tracking-widest bg-white px-3 py-2 rounded-lg shadow-sm border border-slate-100 flex items-center gap-2">
+                    <div id="statusDot" class="w-2 h-2 rounded-full bg-slate-300"></div>
+                    <span id="statusText">Inizializzazione...</span>
+                </div>
+                <button onclick="toggleConfig()" class="text-[10px] text-blue-600 hover:underline uppercase font-bold">⚙️ Impostazioni GitHub</button>
             </div>
         </header>
 
         <div id="setupArea" class="hidden mb-8 p-6 bg-white border-2 border-dashed border-blue-200 rounded-2xl shadow-sm">
-            <h3 class="font-bold text-blue-800 mb-4 flex items-center">⚙️ Configurazione GitHub</h3>
+            <h3 class="font-bold text-blue-800 mb-4 flex items-center justify-between">
+                <span>⚙️ Configurazione GitHub</span>
+                <button onclick="toggleConfig()" class="text-slate-400 hover:text-red-500">✕</button>
+            </h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input type="password" id="ghToken" placeholder="Personal Access Token" class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none">
+                <input type="password" id="ghToken" placeholder="GitHub Personal Access Token" class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none">
                 <input type="text" id="ghRepo" placeholder="utente/nome-repo" class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none">
-                <button onclick="saveSetup()" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-700 transition active:scale-95">Connetti</button>
+                <button onclick="saveSetup()" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-700 transition active:scale-95">Connetti e Salva</button>
             </div>
+            <p class="text-[10px] text-slate-400 mt-3 italic">I dati verranno salvati nel file 'data.json' della repository indicata.</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -42,11 +63,11 @@
                         <div class="grid grid-cols-2 gap-3">
                             <div class="col-span-1">
                                 <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data</label>
-                                <input type="date" id="date" class="w-full border-slate-200 border rounded-xl p-3 text-sm focus:border-blue-500 outline-none">
+                                <input type="date" id="date" class="w-full border-slate-200 border rounded-xl p-3 text-sm focus:border-blue-500 outline-none bg-slate-50" required>
                             </div>
                             <div class="col-span-1">
                                 <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Ora</label>
-                                <input type="time" id="time" class="w-full border-slate-200 border rounded-xl p-3 text-sm focus:border-blue-500 outline-none">
+                                <input type="time" id="time" class="w-full border-slate-200 border rounded-xl p-3 text-sm focus:border-blue-500 outline-none bg-slate-50" required>
                             </div>
                         </div>
 
@@ -62,21 +83,21 @@
                         </div>
 
                         <div class="grid grid-cols-3 gap-2">
-                            <div class="p-2 border border-slate-100 rounded-xl">
+                            <div class="p-2 border border-slate-100 rounded-xl bg-white">
                                 <label class="block text-[9px] font-bold text-slate-400 uppercase">BPM</label>
                                 <input type="number" id="bpm" placeholder="70" class="w-full text-sm font-bold outline-none" required>
                             </div>
-                            <div class="p-2 border border-slate-100 rounded-xl">
+                            <div class="p-2 border border-slate-100 rounded-xl bg-white">
                                 <label class="block text-[9px] font-bold text-slate-400 uppercase">Temp °C</label>
                                 <input type="number" step="0.1" id="temp" placeholder="36.5" class="w-full text-sm font-bold outline-none" required>
                             </div>
-                            <div class="p-2 border border-slate-100 rounded-xl">
+                            <div class="p-2 border border-slate-100 rounded-xl bg-white">
                                 <label class="block text-[9px] font-bold text-slate-400 uppercase">SpO2 %</label>
                                 <input type="number" id="spo2" placeholder="98" class="w-full text-sm font-bold outline-none" required>
                             </div>
                         </div>
 
-                        <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition active:scale-95 flex justify-center items-center gap-2">
+                        <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition active:scale-95 flex justify-center items-center gap-2">
                             <span>Registra Dati</span>
                         </button>
                     </form>
@@ -86,11 +107,16 @@
             <main class="lg:col-span-8">
                 <div class="flex items-center justify-between mb-4 px-2">
                     <h2 class="text-xl font-bold text-slate-800 italic">Cronologia Misurazioni</h2>
-                    <span class="text-xs text-slate-400">Tutti i dati sono salvati su GitHub</span>
+                    <div class="flex gap-2">
+                        <button onclick="ghFetch()" class="text-xs bg-white border px-3 py-1 rounded-full hover:bg-slate-50 transition text-slate-600">Aggiorna</button>
+                    </div>
                 </div>
                 
-                <div id="recordsList" class="space-y-4 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 pb-10">
+                <div id="recordsList" class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-10">
+                    <div class="col-span-full py-20 text-center text-slate-400">
+                        Caricamento in corso...
                     </div>
+                </div>
             </main>
         </div>
     </div>
@@ -100,7 +126,15 @@
         let records = [];
         let fileSha = "";
 
-        if (!config) document.getElementById('setupArea').classList.remove('hidden');
+        // Inizializzazione
+        if (!config) {
+            document.getElementById('setupArea').classList.remove('hidden');
+        }
+
+        function toggleConfig() {
+            const area = document.getElementById('setupArea');
+            area.classList.toggle('hidden');
+        }
 
         function saveSetup() {
             const token = document.getElementById('ghToken').value.trim();
@@ -108,73 +142,111 @@
             if(token && repo) {
                 localStorage.setItem('gh_health_config', JSON.stringify({token, repo}));
                 location.reload();
+            } else {
+                alert("Inserisci sia il Token che il nome della Repository.");
             }
         }
 
         async function ghFetch() {
-            if (!config) return;
-            setStatus("🔄 Sincronizzazione...");
+            if (!config) {
+                setStatus("⚠️ Configurazione mancante", "bg-orange-400");
+                render();
+                return;
+            }
+            
+            setStatus("🔄 Sincronizzazione...", "bg-blue-400");
             const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
+            
             try {
-                const res = await fetch(url, { headers: { "Authorization": `token ${config.token}` } });
+                const res = await fetch(url, { 
+                    headers: { "Authorization": `token ${config.token}`, "Cache-Control": "no-cache" } 
+                });
+                
                 if (res.ok) {
                     const data = await res.json();
                     fileSha = data.sha;
-                    records = JSON.parse(atob(data.content));
+                    const content = decodeURIComponent(escape(atob(data.content)));
+                    records = JSON.parse(content);
                     render();
-                    setStatus("✅ Dati aggiornati");
+                    setStatus("✅ Dati aggiornati", "bg-green-500");
+                } else if (res.status === 404) {
+                    // File non esiste ancora
+                    records = [];
+                    render();
+                    setStatus("🆕 Nuovo database", "bg-blue-400");
                 } else {
-                    setStatus("❌ Errore Configurazione");
+                    setStatus("❌ Errore GitHub", "bg-red-500");
                 }
             } catch (e) { 
-                setStatus("⚠️ Connessione Assente");
+                setStatus("⚠️ Errore Connessione", "bg-red-500");
             }
         }
 
         async function ghPush() {
-            setStatus("⏳ Cloud Sync...");
+            if (!config) return;
+            
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            
+            setStatus("⏳ Cloud Sync...", "bg-yellow-400");
             const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
+            
+            const contentString = JSON.stringify(records, null, 2);
             const body = {
-                message: "Aggiornamento salute " + new Date().toLocaleString(),
-                content: btoa(unescape(encodeURIComponent(JSON.stringify(records, null, 2)))),
-                sha: fileSha
+                message: "Health Update: " + new Date().toLocaleString(),
+                content: btoa(unescape(encodeURIComponent(contentString))),
+                sha: fileSha || undefined
             };
+
             try {
                 const res = await fetch(url, {
                     method: "PUT",
-                    headers: { "Authorization": `token ${config.token}`, "Content-Type": "application/json" },
+                    headers: { 
+                        "Authorization": `token ${config.token}`, 
+                        "Content-Type": "application/json" 
+                    },
                     body: JSON.stringify(body)
                 });
+                
                 if (res.ok) {
                     const data = await res.json();
                     fileSha = data.content.sha;
-                    setStatus("✅ Salvataggio riuscito");
-                    setTimeout(() => setStatus("✅ Sincronizzato"), 3000);
+                    setStatus("✅ Salvataggio riuscito", "bg-green-500");
+                    setTimeout(() => setStatus("✅ Sincronizzato", "bg-green-500"), 3000);
+                } else {
+                    throw new Error("Push failed");
                 }
             } catch(e) {
-                setStatus("❌ Errore durante il salvataggio");
+                setStatus("❌ Errore Salvataggio", "bg-red-500");
+                alert("Errore durante il salvataggio su GitHub. Controlla i permessi del token.");
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
             }
         }
 
-        function setStatus(text) {
-            document.getElementById('status').innerText = text;
+        function setStatus(text, colorClass) {
+            document.getElementById('statusText').innerText = text;
+            const dot = document.getElementById('statusDot');
+            dot.className = `w-2 h-2 rounded-full ${colorClass}`;
         }
 
         function render() {
             const list = document.getElementById('recordsList');
             if (records.length === 0) {
-                list.innerHTML = `<div class="col-span-2 p-10 text-center text-slate-400 bg-white rounded-3xl border border-dashed">Nessun dato registrato.</div>`;
+                list.innerHTML = `<div class="col-span-full p-10 text-center text-slate-400 bg-white rounded-3xl border border-dashed">Nessun dato presente. Inizia ora!</div>`;
                 return;
             }
 
             list.innerHTML = records.map((r, i) => `
-                <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md transition group">
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md transition group relative overflow-hidden">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">${r.date}</p>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">${formatDate(r.date)}</p>
                             <p class="text-lg font-bold text-slate-700">${r.time}</p>
                         </div>
-                        <button onclick="deleteRec(${i})" class="opacity-0 group-hover:opacity-100 transition p-2 bg-red-50 text-red-500 rounded-full hover:bg-red-500 hover:text-white">
+                        <button onclick="deleteRec(${i})" class="opacity-0 group-hover:opacity-100 transition p-2 bg-red-50 text-red-400 rounded-full hover:bg-red-500 hover:text-white">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -184,28 +256,42 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div class="col-span-1">
                             <span class="text-[9px] text-slate-400 uppercase font-bold block">Pressione</span>
-                            <span class="text-2xl font-black text-blue-900">${r.max}/${r.min}</span>
-                            <span class="text-xs text-slate-400 italic">mmHg</span>
+                            <span class="text-2xl font-black ${getPressioneColor(r.max)}">${r.max}/${r.min}</span>
+                            <span class="text-[10px] text-slate-400 italic ml-1">mmHg</span>
                         </div>
                         <div class="col-span-1 border-l pl-4 border-slate-100">
                             <span class="text-[9px] text-slate-400 uppercase font-bold block">Battiti</span>
                             <span class="text-2xl font-black text-red-500">${r.bpm}</span>
-                            <span class="text-xs text-slate-400 italic">BPM</span>
+                            <span class="text-[10px] text-slate-400 italic ml-1">BPM</span>
                         </div>
                     </div>
 
-                    <div class="mt-4 pt-4 border-t border-slate-50 grid grid-cols-2 gap-2 text-sm font-medium">
-                        <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-orange-400"></span>
-                            <span class="text-slate-600">${r.temp}°C</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-blue-400"></span>
-                            <span class="text-slate-600">${r.spo2}% SpO2</span>
+                    <div class="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center text-sm font-medium">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-orange-400"></span>
+                                <span class="text-slate-600">${r.temp}°C</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                                <span class="text-slate-600">${r.spo2}% <small class="text-[9px]">SpO2</small></span>
+                            </div>
                         </div>
                     </div>
                 </div>
             `).join('');
+        }
+
+        // Helpers
+        function getPressioneColor(max) {
+            if (max >= 140) return 'text-red-600';
+            if (max >= 130) return 'text-orange-500';
+            return 'text-blue-900';
+        }
+
+        function formatDate(dateStr) {
+            const options = { day: '2-digit', month: 'short', year: 'numeric' };
+            return new Date(dateStr).toLocaleDateString('it-IT', options);
         }
 
         document.getElementById('healthForm').onsubmit = async (e) => {
@@ -213,21 +299,27 @@
             const newRec = {
                 date: document.getElementById('date').value,
                 time: document.getElementById('time').value,
-                max: document.getElementById('max').value,
-                min: document.getElementById('min').value,
-                bpm: document.getElementById('bpm').value,
-                temp: document.getElementById('temp').value,
-                spo2: document.getElementById('spo2').value,
+                max: parseInt(document.getElementById('max').value),
+                min: parseInt(document.getElementById('min').value),
+                bpm: parseInt(document.getElementById('bpm').value),
+                temp: parseFloat(document.getElementById('temp').value),
+                spo2: parseInt(document.getElementById('spo2').value),
             };
+
+            // Aggiungi in cima alla lista
             records.unshift(newRec); 
             render();
+            
+            // Sync con GitHub
             await ghPush();
+            
+            // Reset form ma mantieni data/ora aggiornati
             e.target.reset();
             setNow();
         };
 
         window.deleteRec = async (i) => {
-            if(confirm("Eliminare definitivamente questa misurazione?")) {
+            if(confirm("Eliminare questa misurazione? L'azione verrà sincronizzata immediatamente.")) {
                 records.splice(i, 1);
                 render();
                 await ghPush();
@@ -236,10 +328,14 @@
 
         function setNow() {
             const n = new Date();
-            document.getElementById('date').value = n.toISOString().split('T')[0];
+            const offset = n.getTimezoneOffset() * 60000;
+            const localISOTime = (new Date(n - offset)).toISOString().split('T')[0];
+            
+            document.getElementById('date').value = localISOTime;
             document.getElementById('time').value = n.toTimeString().slice(0,5);
         }
 
+        // Avvio
         setNow();
         ghFetch();
     </script>
