@@ -84,16 +84,16 @@ input:focus { border-color:#3498db; box-shadow:0 0 5px rgba(52,152,219,0.3); out
         <label>Pulsazioni</label><input type="number" id="pulsazioni">
       </div>
       <div>
-        <label>BPM</label><input type="number" id="bpm">
+        <label>SP02 (%)</label><input type="number" id="spo2">
       </div>
     </div>
 
     <div class="flex-row">
       <div>
-        <label>Temperatura (°C)</label><input type="number" step="0.1" id="temp">
+        <label>BPM</label><input type="number" id="bpm">
       </div>
       <div>
-        <label>SP02 (%)</label><input type="number" id="spo2">
+        <label>Temperatura (°C)</label><input type="number" step="0.1" id="temp">
       </div>
     </div>
 
@@ -169,7 +169,7 @@ function openModal(index=-1){
 function closeModal(){ modal.style.display="none"; }
 
 function saveData(){
-  const r={ data:data.value, ora:ora.value, massima:massima.value, minima:minima.value, pulsazioni:pulsazioni.value, temp:temp.value, spo2:spo2.value, bpm:bpm.value };
+  const r={ data:data.value, ora:ora.value, massima:massima.value, minima:minima.value, pulsazioni:pulsazioni.value, spo2:spo2.value, bpm:bpm.value, temp:temp.value };
   if(editIndex>=0) records[editIndex]=r; else records.push(r);
   renderTable(); ghPush(); closeModal();
 }
@@ -194,15 +194,16 @@ function renderTable(){
 
     const table=document.createElement("table");
     table.innerHTML=`<tr>
-      <th>Data</th><th>Ora</th><th>Max</th><th>Min</th><th>Puls</th><th>Temp</th><th>SP02</th><th>BPM</th><th>Azioni</th>
+      <th>Data</th><th>Ora</th><th>Max</th><th>Min</th><th>Puls</th><th>SP02</th><th>BPM</th><th>Temp</th><th>Azioni</th>
     </tr>`;
     grouped[month].forEach(r=>{
       table.innerHTML+=`<tr>
         <td>${r.data}</td><td>${r.ora}</td>
         <td class="${getValueColor('max',r.massima)}">${r.massima}</td>
         <td class="${getValueColor('min',r.minima)}">${r.minima}</td>
-        <td>${r.pulsazioni}</td><td>${r.temp}</td><td>${r.spo2}</td>
+        <td>${r.pulsazioni}</td><td>${r.spo2}</td>
         <td class="${getValueColor('bpm',r.bpm)}">${r.bpm}</td>
+        <td>${r.temp}</td>
         <td><button class="warning" onclick="openModal(${r.index})">✏️</button>
             <button class="danger" onclick="deleteRecord(${r.index})">🗑️</button></td>
       </tr>`;
@@ -211,7 +212,7 @@ function renderTable(){
   });
 }
 
-function exportCSV(){ let csv="Data,Ora,Massima,Minima,Pulsazioni,Temp,SP02,BPM\n"; records.forEach(r=>{ csv+=`${r.data},${r.ora},${r.massima},${r.minima},${r.pulsazioni},${r.temp},${r.spo2},${r.bpm}\n`; }); const blob=new Blob([csv],{type:"text/csv"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="parametri.csv"; a.click(); }
+function exportCSV(){ let csv="Data,Ora,Massima,Minima,Pulsazioni,SP02,BPM,Temp\n"; records.forEach(r=>{ csv+=`${r.data},${r.ora},${r.massima},${r.minima},${r.pulsazioni},${r.spo2},${r.bpm},${r.temp}\n`; }); const blob=new Blob([csv],{type:"text/csv"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="parametri.csv"; a.click(); }
 
 // Collapsible GitHub
 var coll = document.getElementsByClassName("collapsible")[0]; coll.addEventListener("click", function(){ this.classList.toggle("active"); var content = this.nextElementSibling; content.style.maxHeight = content.style.maxHeight ? null : content.scrollHeight + "px"; });
