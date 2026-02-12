@@ -115,7 +115,7 @@
         }
 
         async function loadData() {
-            const url = `https://api.github.com/repos/${config.repo}/contents/health_data.json`;
+            const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
             try {
                 const res = await fetch(url, { 
                     headers: { "Authorization": `token ${config.token}` },
