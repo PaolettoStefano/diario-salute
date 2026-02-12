@@ -1,61 +1,265 @@
-function render(){
-const list = document.getElementById("recordsList");
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoraggio Parametri Vitali</title>
 
-if(records.length === 0){
-list.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-400">Nessun dato</td></tr>';
-return;
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  margin: 0;
+  background: #f4f6f9;
 }
 
-// Ordina per data decrescente
-records.sort((a,b)=>{
-return new Date(b.date + " " + b.time) - new Date(a.date + " " + a.time);
-});
-
-// Raggruppa per mese
-let grouped = {};
-
-records.forEach(r=>{
-const dateObj = new Date(r.date);
-const key = dateObj.getFullYear() + "-" + (dateObj.getMonth()+1);
-
-if(!grouped[key]) grouped[key] = [];
-grouped[key].push(r);
-});
-
-let html = "";
-
-Object.keys(grouped).forEach(key=>{
-
-const [year,month] = key.split("-");
-const monthName = new Date(year, month-1).toLocaleString("it-IT", { month: "long" });
-const title = monthName.charAt(0).toUpperCase() + monthName.slice(1) + " " + year;
-
-html += `
-<tr>
-<td colspan="8" class="bg-blue-50 p-3 font-bold text-blue-800 text-sm">
-📅 ${title} (${grouped[key].length} misurazioni)
-</td>
-</tr>
-`;
-
-grouped[key].forEach((r,i)=>{
-html += `
-<tr class="border-b">
-<td class="p-2">${r.date}</td>
-<td class="p-2">${r.time}</td>
-<td class="p-2 font-bold">${r.max}/${r.min}</td>
-<td class="p-2">${r.puls}</td>
-<td class="p-2">${r.temp}°</td>
-<td class="p-2">${r.spo2}%</td>
-<td class="p-2 font-bold text-red-500">${r.bpm}</td>
-<td class="p-2">
-<button onclick="deleteRec(${records.indexOf(r)})">🗑</button>
-</td>
-</tr>
-`;
-});
-
-});
-
-list.innerHTML = html;
+header {
+  background: #2c3e50;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
 }
+
+.container {
+  padding: 15px;
+}
+
+button {
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.primary {
+  background: #3498db;
+  color: white;
+}
+
+.success {
+  background: #27ae60;
+  color: white;
+}
+
+.export {
+  background: #8e44ad;
+  color: white;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+th, td {
+  padding: 8px;
+  text-align: center;
+  font-size: 14px;
+}
+
+th {
+  background: #34495e;
+  color: white;
+}
+
+tr:nth-child(even) {
+  background: #f2f2f2;
+}
+
+.month-header {
+  background: #dfe6e9;
+  font-weight: bold;
+  text-align: left;
+  padding: 10px;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  width: 95%;
+  max-width: 400px;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  margin: 5px 0 12px 0;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+}
+</style>
+</head>
+
+<body>
+
+<header>Monitoraggio Parametri Vitali</header>
+
+<div class="container">
+  <button class="primary" onclick="openModal()">+ Inserisci</button>
+  <button class="export" onclick="exportCSV()">Esporta Excel</button>
+
+  <div id="tableContainer"></div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h3>Inserisci Parametri</h3>
+
+    <label>Data</label>
+    <input type="date" id="data">
+
+    <label>Ora</label>
+    <input type="time" id="ora">
+
+    <label>Pressione Massima</label>
+    <input type="number" id="massima">
+
+    <label>Pressione Minima</label>
+    <input type="number" id="minima">
+
+    <label>Pulsazioni</label>
+    <input type="number" id="pulsazioni">
+
+    <label>Temperatura (°C)</label>
+    <input type="number" step="0.1" id="temp">
+
+    <label>SP02 (%)</label>
+    <input type="number" id="spo2">
+
+    <label>BPM</label>
+    <input type="number" id="bpm">
+
+    <div class="actions">
+      <button onclick="closeModal()">Annulla</button>
+      <button class="success" onclick="saveData()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let records = JSON.parse(localStorage.getItem("parametri")) || [];
+
+function openModal() {
+  const now = new Date();
+  document.getElementById("data").value = now.toISOString().split('T')[0];
+  document.getElementById("ora").value = now.toTimeString().slice(0,5);
+  document.getElementById("modal").style.display = "flex";
+}
+
+function closeModal() {
+  document.getElementById("modal").style.display = "none";
+}
+
+function saveData() {
+  const record = {
+    data: data.value,
+    ora: ora.value,
+    massima: massima.value,
+    minima: minima.value,
+    pulsazioni: pulsazioni.value,
+    temp: temp.value,
+    spo2: spo2.value,
+    bpm: bpm.value
+  };
+
+  records.push(record);
+  localStorage.setItem("parametri", JSON.stringify(records));
+  closeModal();
+  renderTable();
+}
+
+function renderTable() {
+  let container = document.getElementById("tableContainer");
+  container.innerHTML = "";
+
+  let grouped = {};
+
+  records.forEach(r => {
+    let month = r.data.substring(0,7);
+    if (!grouped[month]) grouped[month] = [];
+    grouped[month].push(r);
+  });
+
+  Object.keys(grouped).sort().reverse().forEach(month => {
+
+    let monthDiv = document.createElement("div");
+    monthDiv.className = "month-header";
+    monthDiv.innerText = "Mese: " + month;
+    container.appendChild(monthDiv);
+
+    let table = document.createElement("table");
+    table.innerHTML = `
+      <tr>
+        <th>Data</th>
+        <th>Ora</th>
+        <th>Max</th>
+        <th>Min</th>
+        <th>Puls</th>
+        <th>Temp</th>
+        <th>SP02</th>
+        <th>BPM</th>
+      </tr>
+    `;
+
+    grouped[month].forEach(r => {
+      table.innerHTML += `
+        <tr>
+          <td>${r.data}</td>
+          <td>${r.ora}</td>
+          <td>${r.massima}</td>
+          <td>${r.minima}</td>
+          <td>${r.pulsazioni}</td>
+          <td>${r.temp}</td>
+          <td>${r.spo2}</td>
+          <td>${r.bpm}</td>
+        </tr>
+      `;
+    });
+
+    container.appendChild(table);
+  });
+}
+
+function exportCSV() {
+  let csv = "Data,Ora,Massima,Minima,Pulsazioni,Temp,SP02,BPM\n";
+  records.forEach(r => {
+    csv += `${r.data},${r.ora},${r.massima},${r.minima},${r.pulsazioni},${r.temp},${r.spo2},${r.bpm}\n`;
+  });
+
+  let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  let link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "parametri_vitali.csv";
+  link.click();
+}
+
+renderTable();
+</script>
+
+</body>
+</html>
