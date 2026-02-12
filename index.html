@@ -2,284 +2,293 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HealthLog - Diario Medico</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Health Log Pro - Mensile</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        #recordsContainer::-webkit-scrollbar { height: 6px; }
+        #recordsContainer::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .row-hover:hover { background-color: #f8fafc; }
+        .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .syncing { animation: pulse 1.5s infinite; }
+        .mobile-action-btn { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
         input { font-size: 16px !important; }
-        .month-section { border-left: 4px solid #ef4444; margin-top: 25px; padding-left: 12px; margin-bottom: 10px; }
-        .month-label { font-weight: 900; text-transform: uppercase; color: #7f1d1d; font-size: 0.8rem; letter-spacing: 0.1em; margin-bottom: 10px; }
-        .glass-effect { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        /* Stile intestazione Mese */
+        .month-row { background: #f1f5f9; color: #475569; font-weight: 800; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen pb-10">
+<body class="bg-slate-50 font-sans min-h-screen text-slate-900 pb-10">
 
-    <div class="max-w-2xl mx-auto p-4">
+    <div class="max-w-6xl mx-auto p-4 md:p-8">
         
-        <header class="flex justify-between items-center mb-6">
-            <div>
-                <h1 class="text-2xl font-black tracking-tighter text-slate-800">HEALTH<span class="text-red-600">LOG</span></h1>
-                <p id="status" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sincronizzazione...</p>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="exportToExcel()" class="bg-green-600 text-white px-3 py-2 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all"><i class="fas fa-file-excel"></i> EXCEL</button>
-                <button onclick="setupCloud()" class="bg-slate-800 text-white px-3 py-2 rounded-xl text-xs shadow-md"><i class="fas fa-cog"></i></button>
+        <header class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <h1 class="text-3xl font-extrabold text-blue-800 flex items-center">
+                <span class="mr-3">🩺</span> Diario Salute 
+            </h1>
+            <div id="status" class="flex items-center text-[10px] md:text-xs font-mono text-slate-500 uppercase tracking-widest bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100">
+                <span id="statusDot" class="status-dot bg-slate-300"></span>
+                <span id="statusText">Inizializzazione...</span>
             </div>
         </header>
 
-        <section class="glass-effect p-6 rounded-[2.5rem] shadow-xl border border-white mb-8">
-            <form id="healthForm" class="space-y-4">
-                <input type="hidden" id="editIndex" value="-1">
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="col-span-2">
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-2">Data e Ora</label>
-                        <input type="datetime-local" id="dataOra" required class="w-full p-4 bg-white border border-slate-200 rounded-2xl focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-2">Pressione (Max/Min)</label>
-                        <div class="flex gap-1 items-center">
-                            <input type="number" id="pMax" placeholder="120" class="w-full p-3 bg-white border border-slate-200 rounded-2xl focus:border-red-500 outline-none">
-                            <span class="text-slate-300">/</span>
-                            <input type="number" id="pMin" placeholder="80" class="w-full p-3 bg-white border border-slate-200 rounded-2xl focus:border-red-500 outline-none">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-2">Pulsazioni (BPM)</label>
-                        <input type="number" id="bpm" placeholder="72" class="w-full p-3 bg-white border border-slate-200 rounded-2xl focus:border-red-500 outline-none">
-                    </div>
-
-                    <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-2">Temperatura (°C)</label>
-                        <input type="number" step="0.1" id="temp" placeholder="36.5" class="w-full p-3 bg-white border border-slate-200 rounded-2xl focus:border-red-500 outline-none">
-                    </div>
-
-                    <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-2">Saturazione (%)</label>
-                        <input type="number" id="spo2" placeholder="98" class="w-full p-3 bg-white border border-slate-200 rounded-2xl focus:border-red-500 outline-none">
-                    </div>
-                </div>
-
-                <div class="flex gap-2 pt-2">
-                    <button type="submit" id="submitBtn" class="flex-1 bg-red-600 text-white py-4 rounded-3xl font-black uppercase tracking-widest shadow-lg shadow-red-200 active:scale-95 transition-all">
-                        Salva Registrazione
-                    </button>
-                    <button type="button" id="cancelBtn" onclick="resetForm()" class="hidden bg-slate-200 text-slate-600 px-6 rounded-3xl font-bold uppercase text-xs">
-                        ANNULLA
-                    </button>
-                </div>
-            </form>
-        </section>
-
-        <div id="dataList" class="space-y-2">
-            <p class="text-center text-slate-400 text-xs italic">Caricamento dati...</p>
+        <div id="setupArea" class="hidden mb-8 p-6 bg-white border-2 border-dashed border-blue-200 rounded-3xl shadow-sm">
+            <h3 class="font-bold text-blue-800 mb-4">⚙️ Configurazione GitHub</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="password" id="ghToken" placeholder="Personal Access Token" class="w-full p-3 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-400">
+                <input type="text" id="ghRepo" placeholder="utente/nome-repo" class="w-full p-3 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-400">
+                <button onclick="saveSetup()" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-xl active:scale-95 transition">Connetti</button>
+            </div>
         </div>
 
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <aside class="lg:col-span-4">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 sticky top-8">
+                    <div class="flex justify-between items-center mb-5">
+                        <h2 id="formTitle" class="text-lg font-bold text-slate-700">Nuova Misurazione</h2>
+                        <button id="cancelEdit" onclick="resetForm()" class="hidden text-xs text-red-500 font-bold uppercase">Annulla</button>
+                    </div>
+                    
+                    <form id="healthForm" class="space-y-4">
+                        <input type="hidden" id="editIndex" value="-1">
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data</label>
+                                <input type="date" id="date" class="w-full border-slate-200 border rounded-xl p-3 text-sm outline-none" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Ora</label>
+                                <input type="time" id="time" class="w-full border-slate-200 border rounded-xl p-3 text-sm outline-none" required>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
+                                <label class="block text-[10px] font-bold text-blue-600 uppercase mb-1">Pressione Max</label>
+                                <input type="number" id="max" placeholder="120" class="w-full bg-transparent text-xl font-bold outline-none" required>
+                            </div>
+                            <div class="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
+                                <label class="block text-[10px] font-bold text-blue-600 uppercase mb-1">Pressione Min</label>
+                                <input type="number" id="min" placeholder="80" class="w-full bg-transparent text-xl font-bold outline-none" required>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="p-3 border border-slate-100 rounded-xl bg-slate-50">
+                                <label class="block text-[9px] font-bold text-slate-400 uppercase">Temp °C</label>
+                                <input type="number" step="0.1" id="temp" placeholder="36.5" class="w-full text-base font-bold outline-none bg-transparent" required>
+                            </div>
+                            <div class="p-3 border border-slate-100 rounded-xl bg-slate-50">
+                                <label class="block text-[9px] font-bold text-slate-400 uppercase">SpO2 %</label>
+                                <input type="number" id="spo2" placeholder="98" class="w-full text-base font-bold outline-none bg-transparent" required>
+                            </div>
+                            <div class="p-3 border border-slate-100 rounded-xl bg-slate-50 col-span-2">
+                                <label class="block text-[9px] font-bold text-slate-400 uppercase">Pulsazioni (BPM)</label>
+                                <input type="number" id="bpm" placeholder="72" class="w-full text-base font-bold outline-none bg-transparent" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-700 transition active:scale-95">
+                            <span id="submitBtnText">Registra Dati</span>
+                        </button>
+                    </form>
+                </div>
+            </aside>
+
+            <main class="lg:col-span-8">
+                <div class="flex items-center justify-between mb-4 px-2">
+                    <h2 class="text-xl font-bold text-slate-800">Cronologia Mensile</h2>
+                    <button onclick="exportExcel()" class="text-xs font-bold text-green-600 flex items-center gap-1">
+                        📊 Esporta Excel
+                    </button>
+                </div>
+                
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div id="recordsContainer" class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase">
+                                    <th class="p-4">Data / Ora</th>
+                                    <th class="p-4 text-center">Pressione</th>
+                                    <th class="p-4 text-center">Temp/SpO2</th>
+                                    <th class="p-4 text-center">BPM</th>
+                                    <th class="p-4"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="recordsList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
     </div>
 
     <script>
-        let config = JSON.parse(localStorage.getItem('healthlog_config'));
-        let healthData = [];
+        let config = JSON.parse(localStorage.getItem('gh_health_config'));
+        let records = [];
         let fileSha = "";
 
-        // Inizializzazione rapida
-        window.onload = () => {
-            setNow(); // Precompila subito data e ora
-            if (!config) {
-                setupCloud();
-            } else {
-                loadData();
-            }
-        };
+        if (!config) document.getElementById('setupArea').classList.remove('hidden');
 
-        // Funzione per impostare Data e Ora Attuale
         function setNow() {
-            const now = new Date();
-            // Correzione fuso orario per l'input datetime-local
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            document.getElementById('dataOra').value = now.toISOString().slice(0, 16);
+            const n = new Date();
+            document.getElementById('date').value = n.toISOString().split('T')[0];
+            document.getElementById('time').value = n.toTimeString().slice(0,5);
         }
 
-        function setupCloud() {
-            const token = prompt("Inserisci GitHub Token:", config ? config.token : "");
-            const repo = prompt("Inserisci Repo (utente/repo):", config ? config.repo : "");
-            if (token && repo) {
-                config = { token, repo };
-                localStorage.setItem('healthlog_config', JSON.stringify(config));
+        function saveSetup() {
+            const token = document.getElementById('ghToken').value.trim();
+            const repo = document.getElementById('ghRepo').value.trim();
+            if(token && repo) {
+                localStorage.setItem('gh_health_config', JSON.stringify({token, repo}));
                 location.reload();
             }
         }
 
-        async function loadData() {
+        async function ghFetch() {
+            if (!config) return;
+            setStatus("Sincronizzazione...", "blue", true);
             const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
             try {
-                const res = await fetch(url, { 
-                    headers: { "Authorization": `token ${config.token}` },
-                    cache: 'no-store' 
-                });
+                const res = await fetch(url, { headers: { "Authorization": `token ${config.token}` }, cache: 'no-store' });
                 if (res.ok) {
                     const data = await res.json();
                     fileSha = data.sha;
-                    healthData = JSON.parse(decodeURIComponent(escape(atob(data.content))));
-                    renderList();
-                    document.getElementById('status').innerText = "Online - Dati caricati";
-                } else {
-                    document.getElementById('dataList').innerHTML = `<p class="text-center text-slate-400 text-xs">Nessun dato trovato. Inizia il primo inserimento!</p>`;
-                    document.getElementById('status').innerText = "Online - File nuovo";
+                    records = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+                    render();
+                    setStatus("Dati aggiornati", "green");
                 }
-            } catch (e) { 
-                document.getElementById('status').innerText = "Errore connessione";
-                console.error(e);
+            } catch (e) { setStatus("Errore Connessione", "red"); }
+        }
+
+        async function ghPush() {
+            setStatus("Salvataggio...", "blue", true);
+            const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
+            const body = {
+                message: "Update Health Log",
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(records, null, 2)))),
+                sha: fileSha
+            };
+            const res = await fetch(url, {
+                method: "PUT",
+                headers: { "Authorization": `token ${config.token}`, "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+            if (res.ok) {
+                const data = await res.json();
+                fileSha = data.content.sha;
+                setStatus("Salvato", "green");
             }
         }
 
-        function renderList() {
-            const container = document.getElementById('dataList');
-            container.innerHTML = "";
+        function render() {
+            const list = document.getElementById('recordsList');
+            list.innerHTML = "";
             
-            if (healthData.length === 0) {
-                container.innerHTML = `<p class="text-center text-slate-400 text-xs">Nessuna registrazione presente.</p>`;
-                return;
-            }
+            // Ordina per data/ora decrescente
+            records.sort((a,b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time));
 
-            // Ordina per data decrescente (più recenti in alto)
-            healthData.sort((a, b) => new Date(b.dataOra) - new Date(a.dataOra));
+            let lastMonth = "";
 
-            let currentMonth = "";
-            let currentSection = null;
-
-            healthData.forEach((item, index) => {
-                const date = new Date(item.dataOra);
-                const monthLabel = date.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
-
-                if (monthLabel !== currentMonth) {
-                    currentMonth = monthLabel;
-                    const sectionWrapper = document.createElement('div');
-                    sectionWrapper.className = "month-section";
-                    sectionWrapper.innerHTML = `<div class="month-label">${currentMonth}</div>`;
-                    container.appendChild(sectionWrapper);
-                    currentSection = sectionWrapper;
+            records.forEach((r, i) => {
+                const currentMonth = new Date(r.date).toLocaleDateString('it-IT', {month:'long', year:'numeric'});
+                
+                if (currentMonth !== lastMonth) {
+                    lastMonth = currentMonth;
+                    const mRow = document.createElement('tr');
+                    mRow.innerHTML = `<td colspan="5" class="p-3 month-row">${currentMonth}</td>`;
+                    list.appendChild(mRow);
                 }
 
-                const card = document.createElement('div');
-                card.className = "bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between mb-3";
-                card.innerHTML = `
-                    <div class="flex-1">
-                        <div class="text-[10px] font-black text-red-500 uppercase mb-1">
-                            ${date.toLocaleDateString('it-IT')} - ${date.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'})}
-                        </div>
-                        <div class="grid grid-cols-4 gap-2 text-center">
-                            <div><p class="text-[8px] text-slate-400 font-bold uppercase">Press.</p><p class="text-xs font-black text-slate-800">${item.pMax}/${item.pMin}</p></div>
-                            <div><p class="text-[8px] text-slate-400 font-bold uppercase">Bpm</p><p class="text-xs font-black text-slate-800">${item.bpm}</p></div>
-                            <div><p class="text-[8px] text-slate-400 font-bold uppercase">Temp.</p><p class="text-xs font-black text-slate-800">${item.temp}°</p></div>
-                            <div><p class="text-[8px] text-slate-400 font-bold uppercase">SpO2</p><p class="text-xs font-black text-slate-800">${item.spo2}%</p></div>
-                        </div>
-                    </div>
-                    <div class="flex gap-2 ml-4 border-l pl-3 border-slate-100">
-                        <button onclick="editItem(${index})" class="text-blue-500 px-2 py-1 active:scale-125 transition-transform"><i class="fas fa-edit"></i></button>
-                        <button onclick="deleteItem(${index})" class="text-slate-300 px-2 py-1 active:text-red-500"><i class="fas fa-trash-alt"></i></button>
-                    </div>
+                const row = document.createElement('tr');
+                row.className = "row-hover border-b border-slate-50";
+                row.innerHTML = `
+                    <td class="p-4">
+                        <div class="text-[10px] font-bold text-slate-400 uppercase">${r.date}</div>
+                        <div class="text-sm font-black">${r.time}</div>
+                    </td>
+                    <td class="p-4 text-center font-black text-blue-900">${r.max}/${r.min}</td>
+                    <td class="p-4 text-center">
+                        <div class="text-xs font-bold text-slate-600">${r.temp}°C</div>
+                        <div class="text-xs font-bold text-cyan-600">${r.spo2}%</div>
+                    </td>
+                    <td class="p-4 text-center font-black text-red-600">${r.bpm}</td>
+                    <td class="p-4 text-right">
+                        <button onclick="editRec(${i})" class="text-blue-400 mr-3"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteRec(${i})" class="text-slate-300"><i class="fas fa-trash"></i></button>
+                    </td>
                 `;
-                currentSection.appendChild(card);
+                list.appendChild(row);
             });
         }
 
         document.getElementById('healthForm').onsubmit = async (e) => {
             e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            const originalText = btn.innerText;
-            btn.disabled = true; btn.innerText = "SALVATAGGIO...";
-
-            const entry = {
-                dataOra: document.getElementById('dataOra').value,
-                pMax: document.getElementById('pMax').value,
-                pMin: document.getElementById('pMin').value,
-                bpm: document.getElementById('bpm').value,
+            const index = parseInt(document.getElementById('editIndex').value);
+            const data = {
+                date: document.getElementById('date').value,
+                time: document.getElementById('time').value,
+                max: document.getElementById('max').value,
+                min: document.getElementById('min').value,
                 temp: document.getElementById('temp').value,
-                spo2: document.getElementById('spo2').value
+                spo2: document.getElementById('spo2').value,
+                bpm: document.getElementById('bpm').value
             };
 
-            const editIndex = parseInt(document.getElementById('editIndex').value);
-            if (editIndex > -1) {
-                healthData[editIndex] = entry;
-            } else {
-                healthData.unshift(entry);
-            }
+            if (index === -1) records.unshift(data);
+            else records[index] = data;
 
-            const success = await saveToCloud();
-            if (success) {
-                resetForm();
-            }
-            btn.disabled = false; btn.innerText = originalText;
+            render();
+            await ghPush();
+            resetForm();
         };
 
-        async function saveToCloud() {
-            const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
-            const content = btoa(unescape(encodeURIComponent(JSON.stringify(healthData, null, 2))));
-            const body = { message: "Update HealthData", content, sha: fileSha };
-
-            try {
-                const res = await fetch(url, {
-                    method: "PUT",
-                    headers: { "Authorization": `token ${config.token}`, "Content-Type": "application/json" },
-                    body: JSON.stringify(body)
-                });
-
-                if (res.ok) {
-                    const resData = await res.json();
-                    fileSha = resData.content.sha;
-                    renderList();
-                    return true;
-                } else {
-                    alert("Errore GitHub: Verifica il token o la connessione.");
-                    return false;
-                }
-            } catch (e) {
-                alert("Errore di rete.");
-                return false;
-            }
+        function editRec(i) {
+            const r = records[i];
+            document.getElementById('editIndex').value = i;
+            document.getElementById('date').value = r.date;
+            document.getElementById('time').value = r.time;
+            document.getElementById('max').value = r.max;
+            document.getElementById('min').value = r.min;
+            document.getElementById('temp').value = r.temp;
+            document.getElementById('spo2').value = r.spo2;
+            document.getElementById('bpm').value = r.bpm;
+            document.getElementById('formTitle').innerText = "Modifica Misurazione";
+            document.getElementById('submitBtnText').innerText = "Aggiorna Dati";
+            document.getElementById('cancelEdit').classList.remove('hidden');
+            window.scrollTo({top:0, behavior:'smooth'});
         }
 
-        function editItem(index) {
-            const item = healthData[index];
-            document.getElementById('dataOra').value = item.dataOra;
-            document.getElementById('pMax').value = item.pMax;
-            document.getElementById('pMin').value = item.pMin;
-            document.getElementById('bpm').value = item.bpm;
-            document.getElementById('temp').value = item.temp;
-            document.getElementById('spo2').value = item.spo2;
-            document.getElementById('editIndex').value = index;
-            document.getElementById('submitBtn').innerText = "AGGIORNA RIGA";
-            document.getElementById('cancelBtn').classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        async function deleteItem(index) {
-            if (confirm("Eliminare definitivamente questa registrazione?")) {
-                healthData.splice(index, 1);
-                await saveToCloud();
-            }
+        function deleteRec(i) {
+            if(confirm("Eliminare?")) { records.splice(i,1); render(); ghPush(); }
         }
 
         function resetForm() {
             document.getElementById('healthForm').reset();
             document.getElementById('editIndex').value = "-1";
-            document.getElementById('submitBtn').innerText = "Salva Registrazione";
-            document.getElementById('cancelBtn').classList.add('hidden');
-            setNow(); // Reimposta data e ora attuale
+            document.getElementById('formTitle').innerText = "Nuova Misurazione";
+            document.getElementById('submitBtnText').innerText = "Registra Dati";
+            document.getElementById('cancelEdit').classList.add('hidden');
+            setNow();
         }
 
-        function exportToExcel() {
-            if (healthData.length === 0) { alert("Nessun dato da esportare"); return; }
-            const ws = XLSX.utils.json_to_sheet(healthData);
+        function setStatus(text, color, syncing=false) {
+            document.getElementById('statusText').innerText = text;
+            document.getElementById('statusDot').className = `status-dot bg-${color}-500 ${syncing?'syncing':''}`;
+        }
+
+        function exportExcel() {
+            const ws = XLSX.utils.json_to_sheet(records);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Salute");
-            XLSX.writeFile(wb, "Diario_Salute.xlsx");
+            XLSX.writeFile(wb, "Salute_Report.xlsx");
         }
+
+        window.onload = () => { setNow(); if(config) ghFetch(); };
     </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </body>
 </html>
