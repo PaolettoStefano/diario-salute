@@ -84,7 +84,7 @@ input:focus { border-color:#3498db; box-shadow:0 0 5px rgba(52,152,219,0.3); out
         <label>Pulsazioni</label><input type="number" id="pulsazioni">
       </div>
       <div>
-        <label>Saturaz.</label><input type="number" id="spo2">
+        <label>SP02 (%)</label><input type="number" id="spo2">
       </div>
     </div>
 
@@ -125,6 +125,8 @@ async function ghFetch(){
       const data=await res.json();
       fileSha=data.sha;
       records=JSON.parse(atob(data.content));
+      // Ordina per data e ora dal più recente al più vecchio
+      records.sort((a,b)=> new Date(b.data+" "+b.ora) - new Date(a.data+" "+a.ora));
       renderTable();
       setStatus("Dati caricati","green");
     } else if(res.status===404){
@@ -171,6 +173,8 @@ function closeModal(){ modal.style.display="none"; }
 function saveData(){
   const r={ data:data.value, ora:ora.value, massima:massima.value, minima:minima.value, pulsazioni:pulsazioni.value, spo2:spo2.value, bpm:bpm.value, temp:temp.value };
   if(editIndex>=0) records[editIndex]=r; else records.push(r);
+  // Ordina nuovamente dopo inserimento
+  records.sort((a,b)=> new Date(b.data+" "+b.ora) - new Date(a.data+" "+a.ora));
   renderTable(); ghPush(); closeModal();
 }
 
