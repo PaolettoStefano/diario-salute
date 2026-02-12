@@ -2,19 +2,39 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Viewport ottimizzato mobile -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
 <title>Diario Salute</title>
+
 <script src="https://cdn.tailwindcss.com"></script>
+
 <style>
-input { font-size:16px !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { padding-bottom: 40px; }
+
+input, button {
+    font-size:16px !important; /* evita zoom automatico iOS */
+}
+
+button {
+    min-height:44px; /* standard Apple touch */
+}
+
+table {
+    min-width:700px;
+}
 </style>
 </head>
 
-<body class="bg-slate-50 font-sans min-h-screen p-4">
+<body class="bg-slate-50 font-sans text-slate-800">
 
-<div class="max-w-4xl mx-auto">
+<div class="max-w-4xl mx-auto p-4">
 
-<h1 class="text-3xl font-bold text-blue-800 mb-6">🩺 Diario Salute</h1>
+<h1 class="text-2xl md:text-3xl font-bold text-blue-800 mb-6">
+🩺 Diario Salute
+</h1>
 
 <div class="bg-white p-6 rounded-2xl shadow">
 
@@ -22,15 +42,15 @@ input { font-size:16px !important; }
 
 <input type="hidden" id="editIndex" value="-1">
 
-<!-- DATA E ORA -->
+<!-- DATA + ORA -->
 <div class="grid grid-cols-2 gap-4">
 <div>
-<label class="block text-sm font-semibold text-slate-600 mb-1">Data</label>
+<label class="block text-sm font-semibold mb-1">Data</label>
 <input type="date" id="date" class="w-full border rounded-xl p-3">
 </div>
 
 <div>
-<label class="block text-sm font-semibold text-slate-600 mb-1">Ora</label>
+<label class="block text-sm font-semibold mb-1">Ora</label>
 <input type="time" id="time" class="w-full border rounded-xl p-3">
 </div>
 </div>
@@ -38,55 +58,57 @@ input { font-size:16px !important; }
 <!-- PRESSIONE -->
 <div class="grid grid-cols-2 gap-4">
 <div>
-<label class="block text-sm font-semibold text-slate-600 mb-1">Pressione Massima</label>
-<input type="number" id="max" placeholder="120" class="w-full border rounded-xl p-3" required>
+<label class="block text-sm font-semibold mb-1">Pressione Massima</label>
+<input type="number" id="max" inputmode="numeric" class="w-full border rounded-xl p-3" required>
 </div>
 
 <div>
-<label class="block text-sm font-semibold text-slate-600 mb-1">Pressione Minima</label>
-<input type="number" id="min" placeholder="80" class="w-full border rounded-xl p-3" required>
+<label class="block text-sm font-semibold mb-1">Pressione Minima</label>
+<input type="number" id="min" inputmode="numeric" class="w-full border rounded-xl p-3" required>
 </div>
 </div>
 
 <!-- PULSAZIONI -->
 <div>
-<label class="block text-sm font-semibold text-slate-600 mb-1">Pulsazioni</label>
-<input type="number" id="puls" placeholder="72" class="w-full border rounded-xl p-3" required>
+<label class="block text-sm font-semibold mb-1">Pulsazioni</label>
+<input type="number" id="puls" inputmode="numeric" class="w-full border rounded-xl p-3" required>
 </div>
 
 <!-- TEMPERATURA -->
 <div>
-<label class="block text-sm font-semibold text-slate-600 mb-1">Temperatura (°C)</label>
-<input type="number" step="0.1" id="temp" placeholder="36.5" class="w-full border rounded-xl p-3" required>
+<label class="block text-sm font-semibold mb-1">Temperatura (°C)</label>
+<input type="number" step="0.1" id="temp" inputmode="decimal" class="w-full border rounded-xl p-3" required>
 </div>
 
 <!-- SPO2 -->
 <div>
-<label class="block text-sm font-semibold text-slate-600 mb-1">SpO2 (%)</label>
-<input type="number" id="spo2" placeholder="98" class="w-full border rounded-xl p-3" required>
+<label class="block text-sm font-semibold mb-1">SpO2 (%)</label>
+<input type="number" id="spo2" inputmode="numeric" class="w-full border rounded-xl p-3" required>
 </div>
 
 <!-- BPM -->
 <div>
-<label class="block text-sm font-semibold text-slate-600 mb-1">BPM</label>
-<input type="number" id="bpm" placeholder="70" class="w-full border rounded-xl p-3" required>
+<label class="block text-sm font-semibold mb-1">BPM</label>
+<input type="number" id="bpm" inputmode="numeric" class="w-full border rounded-xl p-3" required>
 </div>
 
-<button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-4">
+<button type="submit"
+class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl active:scale-95 transition">
 Salva Misurazione
 </button>
 
 </form>
 </div>
 
-<!-- TABELLA CRONOLOGIA -->
+<!-- CRONOLOGIA -->
 <div class="mt-8 bg-white p-6 rounded-2xl shadow">
-<h2 class="text-xl font-bold mb-4">Cronologia</h2>
+
+<h2 class="text-lg font-bold mb-4">Cronologia</h2>
 
 <div class="overflow-x-auto">
-<table class="w-full text-left border-collapse">
+<table class="w-full border-collapse text-sm">
 <thead>
-<tr class="bg-slate-100 text-sm">
+<tr class="bg-slate-100">
 <th class="p-2">Data</th>
 <th class="p-2">Ora</th>
 <th class="p-2">Pressione</th>
@@ -100,49 +122,53 @@ Salva Misurazione
 <tbody id="recordsList"></tbody>
 </table>
 </div>
-</div>
 
+</div>
 </div>
 
 <script>
-let records=[];
+
+let records = JSON.parse(localStorage.getItem("health_records")) || [];
 
 function setNow(){
-const n=new Date();
-document.getElementById('date').value=n.toISOString().split('T')[0];
-document.getElementById('time').value=n.toTimeString().slice(0,5);
+const n = new Date();
+document.getElementById("date").value = n.toISOString().split("T")[0];
+document.getElementById("time").value = n.toTimeString().slice(0,5);
 }
 
 setNow();
+render();
 
-document.getElementById('healthForm').onsubmit=(e)=>{
+document.getElementById("healthForm").addEventListener("submit", function(e){
 e.preventDefault();
 
-const newRec={
-date:date.value,
-time:time.value,
-max:max.value,
-min:min.value,
-puls:puls.value,
-temp:temp.value,
-spo2:spo2.value,
-bpm:bpm.value
+const newRec = {
+date: date.value,
+time: time.value,
+max: max.value,
+min: min.value,
+puls: puls.value,
+temp: temp.value,
+spo2: spo2.value,
+bpm: bpm.value
 };
 
 records.unshift(newRec);
+localStorage.setItem("health_records", JSON.stringify(records));
 render();
-document.getElementById('healthForm').reset();
+this.reset();
 setNow();
-};
+});
 
 function render(){
-const list=document.getElementById('recordsList');
-if(records.length===0){
-list.innerHTML='<tr><td colspan="8" class="p-4 text-center text-slate-400">Nessun dato</td></tr>';
+const list = document.getElementById("recordsList");
+
+if(records.length === 0){
+list.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-400">Nessun dato</td></tr>';
 return;
 }
 
-list.innerHTML=records.map((r,i)=>`
+list.innerHTML = records.map((r,i)=>`
 <tr class="border-b">
 <td class="p-2">${r.date}</td>
 <td class="p-2">${r.time}</td>
@@ -150,11 +176,20 @@ list.innerHTML=records.map((r,i)=>`
 <td class="p-2">${r.puls}</td>
 <td class="p-2">${r.temp}°</td>
 <td class="p-2">${r.spo2}%</td>
-<td class="p-2 text-red-500 font-bold">${r.bpm}</td>
-<td class="p-2"><button onclick="records.splice(${i},1);render();">🗑</button></td>
+<td class="p-2 font-bold text-red-500">${r.bpm}</td>
+<td class="p-2">
+<button onclick="deleteRec(${i})">🗑</button>
+</td>
 </tr>
 `).join('');
 }
+
+function deleteRec(i){
+records.splice(i,1);
+localStorage.setItem("health_records", JSON.stringify(records));
+render();
+}
+
 </script>
 
 </body>
