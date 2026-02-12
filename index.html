@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Monitoraggio Parametri Vitali</title>
-
 <style>
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -31,6 +30,8 @@ button {
   border: none;
   cursor: pointer;
   font-weight: 600;
+  margin-right: 5px;
+  margin-bottom: 10px;
 }
 
 .primary {
@@ -122,6 +123,9 @@ input {
 <div class="container">
   <button class="primary" onclick="openModal()">+ Inserisci</button>
   <button class="export" onclick="exportCSV()">Esporta Excel</button>
+  <button onclick="downloadJSON()">Scarica dati.json</button>
+  <button onclick="uploadJSON()">Carica dati.json</button>
+  <input type="file" id="fileInput" style="display:none" accept=".json">
 
   <div id="tableContainer"></div>
 </div>
@@ -197,8 +201,12 @@ function renderTable() {
   let container = document.getElementById("tableContainer");
   container.innerHTML = "";
 
-  let grouped = {};
+  if(records.length === 0){
+    container.innerHTML = "<p>Nessun dato registrato</p>";
+    return;
+  }
 
+  let grouped = {};
   records.forEach(r => {
     let month = r.data.substring(0,7);
     if (!grouped[month]) grouped[month] = [];
@@ -206,10 +214,9 @@ function renderTable() {
   });
 
   Object.keys(grouped).sort().reverse().forEach(month => {
-
     let monthDiv = document.createElement("div");
     monthDiv.className = "month-header";
-    monthDiv.innerText = "Mese: " + month;
+    monthDiv.innerText = "Mese: " + month + " (" + grouped[month].length + " misurazioni)";
     container.appendChild(monthDiv);
 
     let table = document.createElement("table");
@@ -257,6 +264,36 @@ function exportCSV() {
   link.download = "parametri_vitali.csv";
   link.click();
 }
+
+function downloadJSON() {
+  const blob = new Blob([JSON.stringify(records, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "dati.json";
+  link.click();
+}
+
+function uploadJSON() {
+  document.getElementById("fileInput").click();
+}
+
+document.getElementById("fileInput").addEventListener("change", function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      records = JSON.parse(e.target.result);
+      localStorage.setItem("parametri", JSON.stringify(records));
+      renderTable();
+      alert("Dati caricati correttamente!");
+    } catch {
+      alert("Errore nel file JSON");
+    }
+  };
+  reader.readAsText(file);
+});
 
 renderTable();
 </script>
