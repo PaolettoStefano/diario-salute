@@ -1,165 +1,3 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-<meta charset="UTF-8">
-
-<!-- Viewport ottimizzato mobile -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-
-<title>Diario Salute</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-
-<style>
-html { -webkit-text-size-adjust: 100%; }
-body { padding-bottom: 40px; }
-
-input, button {
-    font-size:16px !important; /* evita zoom automatico iOS */
-}
-
-button {
-    min-height:44px; /* standard Apple touch */
-}
-
-table {
-    min-width:700px;
-}
-</style>
-</head>
-
-<body class="bg-slate-50 font-sans text-slate-800">
-
-<div class="max-w-4xl mx-auto p-4">
-
-<h1 class="text-2xl md:text-3xl font-bold text-blue-800 mb-6">
-🩺 Diario Salute
-</h1>
-
-<div class="bg-white p-6 rounded-2xl shadow">
-
-<form id="healthForm" class="space-y-4">
-
-<input type="hidden" id="editIndex" value="-1">
-
-<!-- DATA + ORA -->
-<div class="grid grid-cols-2 gap-4">
-<div>
-<label class="block text-sm font-semibold mb-1">Data</label>
-<input type="date" id="date" class="w-full border rounded-xl p-3">
-</div>
-
-<div>
-<label class="block text-sm font-semibold mb-1">Ora</label>
-<input type="time" id="time" class="w-full border rounded-xl p-3">
-</div>
-</div>
-
-<!-- PRESSIONE -->
-<div class="grid grid-cols-2 gap-4">
-<div>
-<label class="block text-sm font-semibold mb-1">Pressione Massima</label>
-<input type="number" id="max" inputmode="numeric" class="w-full border rounded-xl p-3" required>
-</div>
-
-<div>
-<label class="block text-sm font-semibold mb-1">Pressione Minima</label>
-<input type="number" id="min" inputmode="numeric" class="w-full border rounded-xl p-3" required>
-</div>
-</div>
-
-<!-- PULSAZIONI -->
-<div>
-<label class="block text-sm font-semibold mb-1">Pulsazioni</label>
-<input type="number" id="puls" inputmode="numeric" class="w-full border rounded-xl p-3" required>
-</div>
-
-<!-- TEMPERATURA -->
-<div>
-<label class="block text-sm font-semibold mb-1">Temperatura (°C)</label>
-<input type="number" step="0.1" id="temp" inputmode="decimal" class="w-full border rounded-xl p-3" required>
-</div>
-
-<!-- SPO2 -->
-<div>
-<label class="block text-sm font-semibold mb-1">SpO2 (%)</label>
-<input type="number" id="spo2" inputmode="numeric" class="w-full border rounded-xl p-3" required>
-</div>
-
-<!-- BPM -->
-<div>
-<label class="block text-sm font-semibold mb-1">BPM</label>
-<input type="number" id="bpm" inputmode="numeric" class="w-full border rounded-xl p-3" required>
-</div>
-
-<button type="submit"
-class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl active:scale-95 transition">
-Salva Misurazione
-</button>
-
-</form>
-</div>
-
-<!-- CRONOLOGIA -->
-<div class="mt-8 bg-white p-6 rounded-2xl shadow">
-
-<h2 class="text-lg font-bold mb-4">Cronologia</h2>
-
-<div class="overflow-x-auto">
-<table class="w-full border-collapse text-sm">
-<thead>
-<tr class="bg-slate-100">
-<th class="p-2">Data</th>
-<th class="p-2">Ora</th>
-<th class="p-2">Pressione</th>
-<th class="p-2">Puls</th>
-<th class="p-2">Temp</th>
-<th class="p-2">SpO2</th>
-<th class="p-2">BPM</th>
-<th class="p-2"></th>
-</tr>
-</thead>
-<tbody id="recordsList"></tbody>
-</table>
-</div>
-
-</div>
-</div>
-
-<script>
-
-let records = JSON.parse(localStorage.getItem("health_records")) || [];
-
-function setNow(){
-const n = new Date();
-document.getElementById("date").value = n.toISOString().split("T")[0];
-document.getElementById("time").value = n.toTimeString().slice(0,5);
-}
-
-setNow();
-render();
-
-document.getElementById("healthForm").addEventListener("submit", function(e){
-e.preventDefault();
-
-const newRec = {
-date: date.value,
-time: time.value,
-max: max.value,
-min: min.value,
-puls: puls.value,
-temp: temp.value,
-spo2: spo2.value,
-bpm: bpm.value
-};
-
-records.unshift(newRec);
-localStorage.setItem("health_records", JSON.stringify(records));
-render();
-this.reset();
-setNow();
-});
-
 function render(){
 const list = document.getElementById("recordsList");
 
@@ -168,7 +6,40 @@ list.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-400">Nes
 return;
 }
 
-list.innerHTML = records.map((r,i)=>`
+// Ordina per data decrescente
+records.sort((a,b)=>{
+return new Date(b.date + " " + b.time) - new Date(a.date + " " + a.time);
+});
+
+// Raggruppa per mese
+let grouped = {};
+
+records.forEach(r=>{
+const dateObj = new Date(r.date);
+const key = dateObj.getFullYear() + "-" + (dateObj.getMonth()+1);
+
+if(!grouped[key]) grouped[key] = [];
+grouped[key].push(r);
+});
+
+let html = "";
+
+Object.keys(grouped).forEach(key=>{
+
+const [year,month] = key.split("-");
+const monthName = new Date(year, month-1).toLocaleString("it-IT", { month: "long" });
+const title = monthName.charAt(0).toUpperCase() + monthName.slice(1) + " " + year;
+
+html += `
+<tr>
+<td colspan="8" class="bg-blue-50 p-3 font-bold text-blue-800 text-sm">
+📅 ${title} (${grouped[key].length} misurazioni)
+</td>
+</tr>
+`;
+
+grouped[key].forEach((r,i)=>{
+html += `
 <tr class="border-b">
 <td class="p-2">${r.date}</td>
 <td class="p-2">${r.time}</td>
@@ -178,19 +49,13 @@ list.innerHTML = records.map((r,i)=>`
 <td class="p-2">${r.spo2}%</td>
 <td class="p-2 font-bold text-red-500">${r.bpm}</td>
 <td class="p-2">
-<button onclick="deleteRec(${i})">🗑</button>
+<button onclick="deleteRec(${records.indexOf(r)})">🗑</button>
 </td>
 </tr>
-`).join('');
+`;
+});
+
+});
+
+list.innerHTML = html;
 }
-
-function deleteRec(i){
-records.splice(i,1);
-localStorage.setItem("health_records", JSON.stringify(records));
-render();
-}
-
-</script>
-
-</body>
-</html>
