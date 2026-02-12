@@ -21,10 +21,12 @@ th { background:#34495e; color:white; }
 tr:nth-child(even) { background:#f2f2f2; }
 .month-header { background:#dfe6e9; font-weight:bold; text-align:left; padding:10px; font-size:14px; }
 .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:9999; }
-.modal-content { background:white; padding:20px; border-radius:12px; width:95%; max-width:400px; }
+.modal-content { background:white; padding:20px; border-radius:12px; width:95%; max-width:500px; }
 .modal-content h3 { margin-top:0; }
 input { width:100%; padding:10px; margin:5px 0 12px 0; border-radius:6px; border:1px solid #ccc; font-size:14px; }
-.actions { display:flex; justify-content:space-between; flex-wrap:wrap; }
+.flex-row { display:flex; gap:10px; flex-wrap:wrap; }
+.flex-row input { flex:1; min-width:100px; }
+.actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:10px; margin-top:10px; }
 #status { margin-bottom:10px; font-size:14px; }
 .color-red { color:#e74c3c; font-weight:bold; }
 .color-orange { color:#e67e22; font-weight:bold; }
@@ -60,12 +62,34 @@ input { width:100%; padding:10px; margin:5px 0 12px 0; border-radius:6px; border
     <h3 id="modalTitle">Inserisci Parametri</h3>
     <label>Data</label><input type="date" id="data">
     <label>Ora</label><input type="time" id="ora">
-    <label>Pressione Massima</label><input type="number" id="massima">
-    <label>Pressione Minima</label><input type="number" id="minima">
-    <label>Pulsazioni</label><input type="number" id="pulsazioni">
-    <label>Temperatura (°C)</label><input type="number" step="0.1" id="temp">
-    <label>SP02 (%)</label><input type="number" id="spo2">
-    <label>BPM</label><input type="number" id="bpm">
+
+    <div class="flex-row">
+      <div>
+        <label>Pressione Massima</label><input type="number" id="massima">
+      </div>
+      <div>
+        <label>Pressione Minima</label><input type="number" id="minima">
+      </div>
+    </div>
+
+    <div class="flex-row">
+      <div>
+        <label>Pulsazioni</label><input type="number" id="pulsazioni">
+      </div>
+      <div>
+        <label>BPM</label><input type="number" id="bpm">
+      </div>
+    </div>
+
+    <div class="flex-row">
+      <div>
+        <label>Temperatura (°C)</label><input type="number" step="0.1" id="temp">
+      </div>
+      <div>
+        <label>SP02 (%)</label><input type="number" id="spo2">
+      </div>
+    </div>
+
     <div class="actions">
       <button onclick="closeModal()">Annulla</button>
       <button class="success" onclick="saveData()">Salva</button>
