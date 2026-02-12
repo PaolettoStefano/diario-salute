@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Monitoraggio Parametri Vitali</title>
+<title>Monitoraggio Parametri Vitali Avanzato</title>
 <style>
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin:0; background:#f4f6f9; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; margin:0; background:#f4f6f9; }
 header { background:#2c3e50; color:white; padding:15px; text-align:center; font-size:20px; font-weight:bold; }
 .container { padding:15px; }
 button { padding:10px 15px; border-radius:8px; border:none; cursor:pointer; font-weight:600; margin-right:5px; margin-bottom:10px; }
@@ -14,17 +14,21 @@ button { padding:10px 15px; border-radius:8px; border:none; cursor:pointer; font
 .export { background:#8e44ad; color:white; }
 .warning { background:#e67e22; color:white; }
 .danger { background:#e74c3c; color:white; }
+.table-container { overflow-x:auto; }
 table { width:100%; border-collapse:collapse; margin-top:10px; background:white; border-radius:10px; overflow:hidden; }
 th, td { padding:8px; text-align:center; font-size:14px; }
 th { background:#34495e; color:white; }
 tr:nth-child(even) { background:#f2f2f2; }
-.month-header { background:#dfe6e9; font-weight:bold; text-align:left; padding:10px; }
-.modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); justify-content:center; align-items:center; }
+.month-header { background:#dfe6e9; font-weight:bold; text-align:left; padding:10px; font-size:14px; }
+.modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:9999; }
 .modal-content { background:white; padding:20px; border-radius:12px; width:95%; max-width:400px; }
 .modal-content h3 { margin-top:0; }
-input { width:100%; padding:8px; margin:5px 0 12px 0; border-radius:6px; border:1px solid #ccc; }
-.actions { display:flex; justify-content:space-between; }
+input { width:100%; padding:10px; margin:5px 0 12px 0; border-radius:6px; border:1px solid #ccc; font-size:14px; }
+.actions { display:flex; justify-content:space-between; flex-wrap:wrap; }
 #status { margin-bottom:10px; font-size:14px; }
+.color-red { color:#e74c3c; font-weight:bold; }
+.color-orange { color:#e67e22; font-weight:bold; }
+.color-blue { color:#3498db; font-weight:bold; }
 </style>
 </head>
 <body>
@@ -39,13 +43,16 @@ input { width:100%; padding:8px; margin:5px 0 12px 0; border-radius:6px; border:
     <input type="password" id="ghToken" placeholder="Personal Access Token">
     <input type="text" id="ghRepo" placeholder="utente/nome-repo">
     <button class="primary" onclick="saveSetup()">Connetti</button>
-    <p style="font-size:12px;color:#555;">Assicurati che il file <b>dati.json</b> esista nella repo.</p>
+    <p style="font-size:12px;color:#555;">Assicurati che il file <b>dati.json</b> esista nella repo o verrà creato automaticamente.</p>
   </div>
 
-  <button class="primary" onclick="openModal()">+ Inserisci</button>
-  <button class="export" onclick="exportCSV()">Esporta Excel</button>
+  <div class="actions">
+    <button class="primary" onclick="openModal()">+ Inserisci</button>
+    <button class="success" onclick="ghFetch()">🔄 Aggiorna dati</button>
+    <button class="export" onclick="exportCSV()">Esporta Excel</button>
+  </div>
 
-  <div id="tableContainer"></div>
+  <div id="tableContainer" class="table-container"></div>
 </div>
 
 <div class="modal" id="modal">
@@ -67,88 +74,91 @@ input { width:100%; padding:8px; margin:5px 0 12px 0; border-radius:6px; border:
 </div>
 
 <script>
-let records = [];
-let editIndex = -1;
-let config = JSON.parse(localStorage.getItem('gh_health_config')) || null;
-let fileSha = "";
+let records=[], editIndex=-1, config=JSON.parse(localStorage.getItem('gh_health_config'))||null, fileSha="";
 
-function saveSetup() {
-  const token = document.getElementById('ghToken').value.trim();
-  const repo = document.getElementById('ghRepo').value.trim();
-  if(token && repo){
-    localStorage.setItem('gh_health_config', JSON.stringify({token, repo}));
-    location.reload();
-  }
+function saveSetup(){
+  const token=document.getElementById('ghToken').value.trim();
+  const repo=document.getElementById('ghRepo').value.trim();
+  if(token && repo){ localStorage.setItem('gh_health_config', JSON.stringify({token,repo})); location.reload(); }
 }
 
-function setStatus(msg, color='black'){
-  document.getElementById('statusText').innerText = msg;
-  document.getElementById('statusText').style.color = color;
-}
+function setStatus(msg,color='black'){ document.getElementById('statusText').innerText=msg; document.getElementById('statusText').style.color=color; }
 
 async function ghFetch(){
   if(!config) return;
-  setStatus("Caricamento dati...", "blue");
-  const url = `https://api.github.com/repos/${config.repo}/contents/dati.json`;
-  try {
-    const res = await fetch(url, { headers:{ Authorization:`token ${config.token}`} });
+  setStatus("Caricamento dati...","blue");
+  const url=`https://api.github.com/repos/${config.repo}/contents/dati.json`;
+  try{
+    const res=await fetch(url,{ headers:{ Authorization:`token ${config.token}`} });
     if(res.ok){
-      const data = await res.json();
-      fileSha = data.sha;
-      records = JSON.parse(atob(data.content));
+      const data=await res.json();
+      fileSha=data.sha;
+      records=JSON.parse(atob(data.content));
       renderTable();
-      setStatus("Dati caricati", "green");
-    } else if(res.status === 404){
-      setStatus("File dati.json non trovato, creeremo uno nuovo", "orange");
-    } else {
-      setStatus("Errore fetch dati", "red");
+      setStatus("Dati caricati","green");
+    } else if(res.status===404){
+      setStatus("File dati.json non trovato, verrà creato...","orange");
+      await createEmptyJSON();
+    } else{
+      setStatus("Errore fetch dati","red");
     }
-  } catch(e){
-    setStatus("Offline o errore di rete", "red");
-  }
+  } catch(e){ setStatus("Offline o errore di rete","red"); }
+}
+
+async function createEmptyJSON(){
+  if(!config) return;
+  const url=`https://api.github.com/repos/${config.repo}/contents/dati.json`;
+  const body={
+    message:"Creazione file dati.json",
+    content:btoa("[]")
+  };
+  try{
+    const res=await fetch(url,{
+      method:"PUT",
+      headers:{ Authorization:`token ${config.token}`, "Content-Type":"application/json"},
+      body:JSON.stringify(body)
+    });
+    if(res.ok){
+      const data=await res.json();
+      fileSha=data.content.sha;
+      records=[];
+      renderTable();
+      setStatus("File dati.json creato con successo","green");
+    } else{
+      setStatus("Errore creazione file","red");
+    }
+  } catch(e){ setStatus("Errore creazione file","red"); }
 }
 
 async function ghPush(){
   if(!config) return;
-  setStatus("Salvataggio dati...", "blue");
-  const url = `https://api.github.com/repos/${config.repo}/contents/dati.json`;
-  const body = {
-    message: "Aggiornamento " + new Date().toLocaleString(),
-    content: btoa(unescape(encodeURIComponent(JSON.stringify(records,null,2)))),
-    sha: fileSha
-  };
+  setStatus("Salvataggio dati...","blue");
+  const url=`https://api.github.com/repos/${config.repo}/contents/dati.json`;
+  const body={ message:"Aggiornamento "+new Date().toLocaleString(),
+               content:btoa(unescape(encodeURIComponent(JSON.stringify(records,null,2)))),
+               sha:fileSha };
   try{
-    const res = await fetch(url,{
+    const res=await fetch(url,{
       method:"PUT",
-      headers:{ "Authorization":`token ${config.token}`, "Content-Type":"application/json"},
-      body: JSON.stringify(body)
+      headers:{ Authorization:`token ${config.token}`, "Content-Type":"application/json"},
+      body:JSON.stringify(body)
     });
-    if(res.ok){
-      const data = await res.json();
-      fileSha = data.content.sha;
-      setStatus("Dati salvati su GitHub", "green");
-    } else {
-      setStatus("Errore salvataggio", "red");
-    }
-  } catch(e){
-    setStatus("Errore salvataggio", "red");
-  }
+    if(res.ok){ const data=await res.json(); fileSha=data.content.sha; setStatus("Dati salvati su GitHub","green"); }
+    else{ setStatus("Errore salvataggio","red"); }
+  } catch(e){ setStatus("Errore salvataggio","red"); }
 }
 
 function openModal(index=-1){
-  const now = new Date();
+  const now=new Date();
   if(index>=0){
-    const r = records[index];
+    const r=records[index];
     data.value=r.data; ora.value=r.ora; massima.value=r.massima; minima.value=r.minima;
     pulsazioni.value=r.pulsazioni; temp.value=r.temp; spo2.value=r.spo2; bpm.value=r.bpm;
-    modalTitle.innerText="Modifica Parametri";
-    editIndex=index;
-  } else {
-    data.value=now.toISOString().split('T')[0];
-    ora.value=now.toTimeString().slice(0,5);
-    modalTitle.innerText="Inserisci Parametri";
-    editIndex=-1;
-    document.querySelectorAll("#modal input").forEach(i=>i.value="");
+    modalTitle.innerText="Modifica Parametri"; editIndex=index;
+  } else{
+    data.value=now.toISOString().split('T')[0]; ora.value=now.toTimeString().slice(0,5);
+    modalTitle.innerText="Inserisci Parametri"; editIndex=-1;
+    document.querySelectorAll("#modal input").forEach(i=>{ if(i.id!=="data" && i.id!=="ora") i.value=""; });
   }
   modal.style.display="flex";
 }
@@ -156,33 +166,29 @@ function openModal(index=-1){
 function closeModal(){ modal.style.display="none"; }
 
 function saveData(){
-  const r = { data:data.value, ora:ora.value, massima:massima.value, minima:minima.value,
-              pulsazioni:pulsazioni.value, temp:temp.value, spo2:spo2.value, bpm:bpm.value };
+  const r={ data:data.value, ora:ora.value, massima:massima.value, minima:minima.value,
+            pulsazioni:pulsazioni.value, temp:temp.value, spo2:spo2.value, bpm:bpm.value };
   if(editIndex>=0) records[editIndex]=r; else records.push(r);
-  renderTable();
-  ghPush();
-  closeModal();
+  renderTable(); ghPush(); closeModal();
 }
 
-function deleteRecord(i){
-  if(confirm("Eliminare questo record?")){
-    records.splice(i,1);
-    renderTable();
-    ghPush();
-  }
+function deleteRecord(i){ if(confirm("Eliminare questo record?")){ records.splice(i,1); renderTable(); ghPush(); } }
+
+function getValueColor(type,val){
+  if(type==='max' && val>=140) return "color-red"; if(type==='max' && val>=130) return "color-orange";
+  if(type==='min' && val>=90) return "color-red"; if(type==='min' && val>=85) return "color-orange";
+  if(type==='bpm' && val>100) return "color-red"; if(type==='bpm' && val<50) return "color-orange";
+  return "color-blue";
 }
 
 function renderTable(){
-  const container=document.getElementById("tableContainer");
-  container.innerHTML="";
+  const container=document.getElementById("tableContainer"); container.innerHTML="";
   if(records.length===0){ container.innerHTML="<p>Nessun dato registrato</p>"; return; }
 
-  let grouped={};
-  records.forEach((r,i)=>{ const month=r.data.substring(0,7); if(!grouped[month]) grouped[month]=[]; grouped[month].push({...r,index:i}); });
+  let grouped={}; records.forEach((r,i)=>{ const month=r.data.substring(0,7); if(!grouped[month]) grouped[month]=[]; grouped[month].push({...r,index:i}); });
 
   Object.keys(grouped).sort().reverse().forEach(month=>{
-    const div=document.createElement("div"); div.className="month-header";
-    div.innerText="Mese: "+month+" ("+grouped[month].length+" misurazioni)"; container.appendChild(div);
+    const div=document.createElement("div"); div.className="month-header"; div.innerText="Mese: "+month+" ("+grouped[month].length+" misurazioni)"; container.appendChild(div);
 
     const table=document.createElement("table");
     table.innerHTML=`<tr>
@@ -190,10 +196,13 @@ function renderTable(){
     </tr>`;
     grouped[month].forEach(r=>{
       table.innerHTML+=`<tr>
-        <td>${r.data}</td><td>${r.ora}</td><td>${r.massima}</td><td>${r.minima}</td>
-        <td>${r.pulsazioni}</td><td>${r.temp}</td><td>${r.spo2}</td><td>${r.bpm}</td>
+        <td>${r.data}</td><td>${r.ora}</td>
+        <td class="${getValueColor('max',r.massima)}">${r.massima}</td>
+        <td class="${getValueColor('min',r.minima)}">${r.minima}</td>
+        <td>${r.pulsazioni}</td><td>${r.temp}</td><td>${r.spo2}</td>
+        <td class="${getValueColor('bpm',r.bpm)}">${r.bpm}</td>
         <td><button class="warning" onclick="openModal(${r.index})">✏️</button>
-        <button class="danger" onclick="deleteRecord(${r.index})">🗑️</button></td>
+            <button class="danger" onclick="deleteRecord(${r.index})">🗑️</button></td>
       </tr>`;
     });
     container.appendChild(table);
