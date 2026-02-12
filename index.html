@@ -1,270 +1,161 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Health Log Pro - Doppio BPM</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        #recordsContainer::-webkit-scrollbar { height: 6px; }
-        #recordsContainer::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .row-hover:hover { background-color: #f8fafc; }
-        .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .syncing { animation: pulse 1.5s infinite; }
-        input { font-size: 16px !important; }
-        .month-row { background: #f1f5f9; color: #475569; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-top: 1px solid #e2e8f0; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diario Salute</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+input { font-size:16px !important; }
+</style>
 </head>
-<body class="bg-slate-50 font-sans min-h-screen text-slate-900 pb-10">
 
-    <div class="max-w-6xl mx-auto p-4 md:p-8">
-        <header class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <h1 class="text-3xl font-extrabold text-blue-800 flex items-center"><span class="mr-3">🩺</span> Diario Salute</h1>
-            <div id="status" class="flex items-center text-[10px] md:text-xs font-mono text-slate-500 uppercase tracking-widest bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100">
-                <span id="statusDot" class="status-dot bg-slate-300"></span>
-                <span id="statusText">Inizializzazione...</span>
-            </div>
-        </header>
+<body class="bg-slate-50 font-sans min-h-screen p-4">
 
-        <div id="setupArea" class="hidden mb-8 p-6 bg-white border-2 border-dashed border-blue-200 rounded-3xl shadow-sm">
-            <h3 class="font-bold text-blue-800 mb-4">⚙️ Configurazione GitHub</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input type="password" id="ghToken" placeholder="Token" class="w-full p-3 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-400">
-                <input type="text" id="ghRepo" placeholder="utente/repo" class="w-full p-3 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-400">
-                <button onclick="saveSetup()" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-xl">Connetti</button>
-            </div>
-        </div>
+<div class="max-w-4xl mx-auto">
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <aside class="lg:col-span-4">
-                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 sticky top-8">
-                    <div class="flex justify-between items-center mb-5">
-                        <h2 id="formTitle" class="text-lg font-bold text-slate-700">Misurazione</h2>
-                        <button id="cancelEdit" onclick="resetForm()" class="hidden text-xs text-red-500 font-bold uppercase">Annulla</button>
-                    </div>
-                    
-                    <form id="healthForm" class="space-y-4">
-                        <input type="hidden" id="editIndex" value="-1">
-                        
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data</label>
-                                <input type="date" id="date" class="w-full border-slate-200 border rounded-xl p-3 text-sm outline-none" required>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Ora</label>
-                                <input type="time" id="time" class="w-full border-slate-200 border rounded-xl p-3 text-sm outline-none" required>
-                            </div>
-                        </div>
+<h1 class="text-3xl font-bold text-blue-800 mb-6">🩺 Diario Salute</h1>
 
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
-                                <label class="block text-[10px] font-bold text-blue-600 uppercase mb-1">Press. Max</label>
-                                <input type="number" id="max" placeholder="120" class="w-full bg-transparent text-xl font-bold outline-none" required>
-                            </div>
-                            <div class="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
-                                <label class="block text-[10px] font-bold text-blue-600 uppercase mb-1">Press. Min</label>
-                                <input type="number" id="min" placeholder="80" class="w-full bg-transparent text-xl font-bold outline-none" required>
-                            </div>
-                            <div class="bg-red-50/50 p-3 rounded-xl border border-red-100 col-span-2">
-                                <label class="block text-[10px] font-bold text-red-600 uppercase mb-1">Pulsazioni (BPM)</label>
-                                <input type="number" id="bpm_pressione" placeholder="72" class="w-full bg-transparent text-xl font-bold outline-none">
-                            </div>
-                        </div>
+<div class="bg-white p-6 rounded-2xl shadow">
 
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="p-3 border border-slate-100 rounded-xl bg-slate-50">
-                                <label class="block text-[9px] font-bold text-slate-400 uppercase">Temp °C</label>
-                                <input type="number" step="0.1" id="temp" placeholder="36.5" class="w-full text-base font-bold outline-none bg-transparent" required>
-                            </div>
-                            <div class="p-3 border border-slate-100 rounded-xl bg-slate-50">
-                                <label class="block text-[9px] font-bold text-slate-400 uppercase">SpO2 %</label>
-                                <input type="number" id="spo2" placeholder="98" class="w-full text-base font-bold outline-none bg-transparent" required>
-                            </div>
-                            <div class="p-3 border border-slate-100 rounded-xl bg-slate-50 col-span-2">
-                                <label class="block text-[9px] font-bold text-slate-400 uppercase">Pulsazioni (BPM)</label>
-                                <input type="number" id="bpm_spo2" placeholder="72" class="w-full text-base font-bold outline-none bg-transparent">
-                            </div>
-                        </div>
+<form id="healthForm" class="space-y-4">
 
-                        <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-700 transition active:scale-95">
-                            <span id="submitBtnText">Registra Dati</span>
-                        </button>
-                    </form>
-                </div>
-            </aside>
+<input type="hidden" id="editIndex" value="-1">
 
-            <main class="lg:col-span-8">
-                <div class="flex items-center justify-between mb-4 px-2">
-                    <h2 class="text-xl font-bold text-slate-800">Cronologia</h2>
-                    <button onclick="exportExcel()" class="text-xs font-bold text-green-600 flex items-center gap-1">📊 Esporta Excel</button>
-                </div>
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div id="recordsContainer" class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-slate-50 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase">
-                                    <th class="p-4">Data / Ora</th>
-                                    <th class="p-4 text-center">Press.</th>
-                                    <th class="p-4 text-center">T/O2</th>
-                                    <th class="p-4 text-center">BPM</th>
-                                    <th class="p-4"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="recordsList"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </main>
-        </div>
-    </div>
+<!-- DATA E ORA -->
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block text-sm font-semibold text-slate-600 mb-1">Data</label>
+<input type="date" id="date" class="w-full border rounded-xl p-3">
+</div>
 
-    <script>
-        let config = JSON.parse(localStorage.getItem('gh_health_config'));
-        let records = [];
-        let fileSha = "";
+<div>
+<label class="block text-sm font-semibold text-slate-600 mb-1">Ora</label>
+<input type="time" id="time" class="w-full border rounded-xl p-3">
+</div>
+</div>
 
-        // Sincronizza i due campi BPM mentre l'utente scrive
-        document.getElementById('bpm_pressione').oninput = (e) => document.getElementById('bpm_spo2').value = e.target.value;
-        document.getElementById('bpm_spo2').oninput = (e) => document.getElementById('bpm_pressione').value = e.target.value;
+<!-- PRESSIONE -->
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block text-sm font-semibold text-slate-600 mb-1">Pressione Massima</label>
+<input type="number" id="max" placeholder="120" class="w-full border rounded-xl p-3" required>
+</div>
 
-        function formatDateIT(dateStr) {
-            const [y, m, d] = dateStr.split('-');
-            return `${d}-${m}-${y}`;
-        }
+<div>
+<label class="block text-sm font-semibold text-slate-600 mb-1">Pressione Minima</label>
+<input type="number" id="min" placeholder="80" class="w-full border rounded-xl p-3" required>
+</div>
+</div>
 
-        function setNow() {
-            const n = new Date();
-            document.getElementById('date').value = n.toISOString().split('T')[0];
-            document.getElementById('time').value = n.toTimeString().slice(0,5);
-        }
+<!-- PULSAZIONI -->
+<div>
+<label class="block text-sm font-semibold text-slate-600 mb-1">Pulsazioni</label>
+<input type="number" id="puls" placeholder="72" class="w-full border rounded-xl p-3" required>
+</div>
 
-        async function ghFetch() {
-            if (!config) return;
-            setStatus("Sincronizzazione...", "blue", true);
-            const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
-            try {
-                const res = await fetch(url, { headers: { "Authorization": `token ${config.token}` }, cache: 'no-store' });
-                if (res.ok) {
-                    const data = await res.json();
-                    fileSha = data.sha;
-                    records = JSON.parse(decodeURIComponent(escape(atob(data.content))));
-                    render();
-                    setStatus("Dati aggiornati", "green");
-                }
-            } catch (e) { setStatus("Errore Connessione", "red"); }
-        }
+<!-- TEMPERATURA -->
+<div>
+<label class="block text-sm font-semibold text-slate-600 mb-1">Temperatura (°C)</label>
+<input type="number" step="0.1" id="temp" placeholder="36.5" class="w-full border rounded-xl p-3" required>
+</div>
 
-        async function ghPush() {
-            setStatus("Salvataggio...", "blue", true);
-            const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
-            const body = {
-                message: "Update Health Log",
-                content: btoa(unescape(encodeURIComponent(JSON.stringify(records, null, 2)))),
-                sha: fileSha
-            };
-            const res = await fetch(url, {
-                method: "PUT",
-                headers: { "Authorization": `token ${config.token}`, "Content-Type": "application/json" },
-                body: JSON.stringify(body)
-            });
-            if (res.ok) {
-                const data = await res.json();
-                fileSha = data.content.sha;
-                setStatus("Salvato", "green");
-            }
-        }
+<!-- SPO2 -->
+<div>
+<label class="block text-sm font-semibold text-slate-600 mb-1">SpO2 (%)</label>
+<input type="number" id="spo2" placeholder="98" class="w-full border rounded-xl p-3" required>
+</div>
 
-        function render() {
-            const list = document.getElementById('recordsList');
-            list.innerHTML = "";
-            records.sort((a,b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time));
-            let lastMonth = "";
+<!-- BPM -->
+<div>
+<label class="block text-sm font-semibold text-slate-600 mb-1">BPM</label>
+<input type="number" id="bpm" placeholder="70" class="w-full border rounded-xl p-3" required>
+</div>
 
-            records.forEach((r, i) => {
-                const currentMonth = new Date(r.date).toLocaleDateString('it-IT', {month:'long', year:'numeric'});
-                if (currentMonth !== lastMonth) {
-                    lastMonth = currentMonth;
-                    const mRow = document.createElement('tr');
-                    mRow.innerHTML = `<td colspan="5" class="p-3 month-row">${currentMonth}</td>`;
-                    list.appendChild(mRow);
-                }
+<button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-4">
+Salva Misurazione
+</button>
 
-                const row = document.createElement('tr');
-                row.className = "row-hover border-b border-slate-50";
-                row.innerHTML = `
-                    <td class="p-4">
-                        <div class="text-sm font-black text-slate-800">${formatDateIT(r.date)}</div>
-                        <div class="text-[10px] font-bold text-slate-400 uppercase">${r.time}</div>
-                    </td>
-                    <td class="p-4 text-center font-black text-blue-900">${r.max}/${r.min}</td>
-                    <td class="p-4 text-center">
-                        <div class="text-xs font-bold text-slate-600">${r.temp}°</div>
-                        <div class="text-xs font-bold text-cyan-600">${r.spo2}%</div>
-                    </td>
-                    <td class="p-4 text-center font-black text-red-600">${r.bpm}</td>
-                    <td class="p-4 text-right">
-                        <div class="flex justify-end gap-3">
-                            <button onclick="editRec(${i})" class="text-blue-400"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteRec(${i})" class="text-slate-300"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                `;
-                list.appendChild(row);
-            });
-        }
+</form>
+</div>
 
-        document.getElementById('healthForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const index = parseInt(document.getElementById('editIndex').value);
-            const finalBpm = document.getElementById('bpm_pressione').value || document.getElementById('bpm_spo2').value;
-            const data = {
-                date: document.getElementById('date').value,
-                time: document.getElementById('time').value,
-                max: document.getElementById('max').value,
-                min: document.getElementById('min').value,
-                temp: document.getElementById('temp').value,
-                spo2: document.getElementById('spo2').value,
-                bpm: finalBpm
-            };
-            if (index === -1) records.unshift(data); else records[index] = data;
-            render();
-            await ghPush();
-            resetForm();
-        };
+<!-- TABELLA CRONOLOGIA -->
+<div class="mt-8 bg-white p-6 rounded-2xl shadow">
+<h2 class="text-xl font-bold mb-4">Cronologia</h2>
 
-        function editRec(i) {
-            const r = records[i];
-            document.getElementById('editIndex').value = i;
-            document.getElementById('date').value = r.date;
-            document.getElementById('time').value = r.time;
-            document.getElementById('max').value = r.max;
-            document.getElementById('min').value = r.min;
-            document.getElementById('temp').value = r.temp;
-            document.getElementById('spo2').value = r.spo2;
-            document.getElementById('bpm_pressione').value = r.bpm;
-            document.getElementById('bpm_spo2').value = r.bpm;
-            document.getElementById('formTitle').innerText = "Modifica";
-            document.getElementById('submitBtnText').innerText = "Aggiorna";
-            document.getElementById('cancelEdit').classList.remove('hidden');
-            window.scrollTo({top:0, behavior:'smooth'});
-        }
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-slate-100 text-sm">
+<th class="p-2">Data</th>
+<th class="p-2">Ora</th>
+<th class="p-2">Pressione</th>
+<th class="p-2">Puls</th>
+<th class="p-2">Temp</th>
+<th class="p-2">SpO2</th>
+<th class="p-2">BPM</th>
+<th class="p-2"></th>
+</tr>
+</thead>
+<tbody id="recordsList"></tbody>
+</table>
+</div>
+</div>
 
-        function resetForm() {
-            document.getElementById('healthForm').reset();
-            document.getElementById('editIndex').value = "-1";
-            setNow();
-        }
+</div>
 
-        function setStatus(text, color, syncing=false) {
-            document.getElementById('statusText').innerText = text;
-            document.getElementById('statusDot').className = `status-dot bg-${color}-500 ${syncing?'syncing':''}`;
-        }
+<script>
+let records=[];
 
-        window.onload = () => { setNow(); if(config) ghFetch(); };
-    </script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+function setNow(){
+const n=new Date();
+document.getElementById('date').value=n.toISOString().split('T')[0];
+document.getElementById('time').value=n.toTimeString().slice(0,5);
+}
+
+setNow();
+
+document.getElementById('healthForm').onsubmit=(e)=>{
+e.preventDefault();
+
+const newRec={
+date:date.value,
+time:time.value,
+max:max.value,
+min:min.value,
+puls:puls.value,
+temp:temp.value,
+spo2:spo2.value,
+bpm:bpm.value
+};
+
+records.unshift(newRec);
+render();
+document.getElementById('healthForm').reset();
+setNow();
+};
+
+function render(){
+const list=document.getElementById('recordsList');
+if(records.length===0){
+list.innerHTML='<tr><td colspan="8" class="p-4 text-center text-slate-400">Nessun dato</td></tr>';
+return;
+}
+
+list.innerHTML=records.map((r,i)=>`
+<tr class="border-b">
+<td class="p-2">${r.date}</td>
+<td class="p-2">${r.time}</td>
+<td class="p-2 font-bold">${r.max}/${r.min}</td>
+<td class="p-2">${r.puls}</td>
+<td class="p-2">${r.temp}°</td>
+<td class="p-2">${r.spo2}%</td>
+<td class="p-2 text-red-500 font-bold">${r.bpm}</td>
+<td class="p-2"><button onclick="records.splice(${i},1);render();">🗑</button></td>
+</tr>
+`).join('');
+}
+</script>
+
 </body>
 </html>
