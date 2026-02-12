@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Health Log Pro - Mensile</title>
+    <title>Health Log Pro - Layout Italia</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -15,8 +15,7 @@
         .syncing { animation: pulse 1.5s infinite; }
         .mobile-action-btn { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
         input { font-size: 16px !important; }
-        /* Stile intestazione Mese */
-        .month-row { background: #f1f5f9; color: #475569; font-weight: 800; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .month-row { background: #f1f5f9; color: #475569; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-top: 1px solid #e2e8f0; }
     </style>
 </head>
 <body class="bg-slate-50 font-sans min-h-screen text-slate-900 pb-10">
@@ -100,9 +99,9 @@
 
             <main class="lg:col-span-8">
                 <div class="flex items-center justify-between mb-4 px-2">
-                    <h2 class="text-xl font-bold text-slate-800">Cronologia Mensile</h2>
+                    <h2 class="text-xl font-bold text-slate-800">Cronologia</h2>
                     <button onclick="exportExcel()" class="text-xs font-bold text-green-600 flex items-center gap-1">
-                        📊 Esporta Excel
+                        📊 Esporta Report
                     </button>
                 </div>
                 
@@ -111,9 +110,9 @@
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="bg-slate-50 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase">
-                                    <th class="p-4">Data / Ora</th>
+                                    <th class="p-4">Data e Ora</th>
                                     <th class="p-4 text-center">Pressione</th>
-                                    <th class="p-4 text-center">Temp/SpO2</th>
+                                    <th class="p-4 text-center">T/O2</th>
                                     <th class="p-4 text-center">BPM</th>
                                     <th class="p-4"></th>
                                 </tr>
@@ -131,7 +130,11 @@
         let records = [];
         let fileSha = "";
 
-        if (!config) document.getElementById('setupArea').classList.remove('hidden');
+        // Funzione per formattare la data da AAAA-MM-GG a GG-MM-AAAA
+        function formatDateIT(dateStr) {
+            const [y, m, d] = dateStr.split('-');
+            return `${d}-${m}-${y}`;
+        }
 
         function setNow() {
             const n = new Date();
@@ -188,7 +191,7 @@
             const list = document.getElementById('recordsList');
             list.innerHTML = "";
             
-            // Ordina per data/ora decrescente
+            // Ordine decrescente
             records.sort((a,b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time));
 
             let lastMonth = "";
@@ -207,18 +210,22 @@
                 row.className = "row-hover border-b border-slate-50";
                 row.innerHTML = `
                     <td class="p-4">
-                        <div class="text-[10px] font-bold text-slate-400 uppercase">${r.date}</div>
-                        <div class="text-sm font-black">${r.time}</div>
+                        <div class="text-sm font-black text-slate-800">${formatDateIT(r.date)}</div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase">${r.time}</div>
                     </td>
-                    <td class="p-4 text-center font-black text-blue-900">${r.max}/${r.min}</td>
                     <td class="p-4 text-center">
-                        <div class="text-xs font-bold text-slate-600">${r.temp}°C</div>
+                        <span class="text-base font-black text-blue-900">${r.max}/${r.min}</span>
+                    </td>
+                    <td class="p-4 text-center">
+                        <div class="text-xs font-bold text-slate-600">${r.temp}°</div>
                         <div class="text-xs font-bold text-cyan-600">${r.spo2}%</div>
                     </td>
                     <td class="p-4 text-center font-black text-red-600">${r.bpm}</td>
                     <td class="p-4 text-right">
-                        <button onclick="editRec(${i})" class="text-blue-400 mr-3"><i class="fas fa-edit"></i></button>
-                        <button onclick="deleteRec(${i})" class="text-slate-300"><i class="fas fa-trash"></i></button>
+                        <div class="flex justify-end gap-3">
+                            <button onclick="editRec(${i})" class="text-blue-400"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteRec(${i})" class="text-slate-300 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                        </div>
                     </td>
                 `;
                 list.appendChild(row);
@@ -256,14 +263,14 @@
             document.getElementById('temp').value = r.temp;
             document.getElementById('spo2').value = r.spo2;
             document.getElementById('bpm').value = r.bpm;
-            document.getElementById('formTitle').innerText = "Modifica Misurazione";
-            document.getElementById('submitBtnText').innerText = "Aggiorna Dati";
+            document.getElementById('formTitle').innerText = "Modifica";
+            document.getElementById('submitBtnText').innerText = "Aggiorna";
             document.getElementById('cancelEdit').classList.remove('hidden');
             window.scrollTo({top:0, behavior:'smooth'});
         }
 
         function deleteRec(i) {
-            if(confirm("Eliminare?")) { records.splice(i,1); render(); ghPush(); }
+            if(confirm("Eliminare questa riga?")) { records.splice(i,1); render(); ghPush(); }
         }
 
         function resetForm() {
@@ -281,12 +288,22 @@
         }
 
         function exportExcel() {
-            const ws = XLSX.utils.json_to_sheet(records);
+            const exportData = records.map(r => ({
+                Data: formatDateIT(r.date),
+                Ora: r.time,
+                'Pressione Max': r.max,
+                'Pressione Min': r.min,
+                'Temperatura': r.temp,
+                'Saturazione %': r.spo2,
+                'Pulsazioni BPM': r.bpm
+            }));
+            const ws = XLSX.utils.json_to_sheet(exportData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Salute");
-            XLSX.writeFile(wb, "Salute_Report.xlsx");
+            XLSX.writeFile(wb, "Report_Salute.xlsx");
         }
 
+        if (!config) document.getElementById('setupArea').classList.remove('hidden');
         window.onload = () => { setNow(); if(config) ghFetch(); };
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
