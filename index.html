@@ -2,357 +2,235 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Health Log Pro - Mobile Friendly</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Health Tracker - Monitoraggio Salute</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Ottimizzazioni per scorrimento e touch */
-        #recordsContainer::-webkit-scrollbar { height: 6px; }
-        #recordsContainer::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .row-hover:hover { background-color: #f8fafc; }
-        .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .syncing { animation: pulse 1.5s infinite; }
-        
-        /* Miglioramento per tasti su Android */
-        .mobile-action-btn { 
-            min-width: 44px; min-height: 44px; 
-            display: flex; align-items: center; justify-content: center;
-        }
-        input { font-size: 16px !important; } /* Previene lo zoom automatico su iOS/Android */
+        input, select { font-size: 16px !important; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .month-header { background: #f1f5f9; padding: 8px 15px; font-weight: 800; text-transform: uppercase; color: #475569; border-left: 4px solid #ef4444; margin-top: 1.5rem; }
     </style>
 </head>
-<body class="bg-slate-50 font-sans min-h-screen text-slate-900 pb-10">
+<body class="bg-slate-100 min-h-screen font-sans">
 
-    <div class="max-w-6xl mx-auto p-4 md:p-8">
+    <div class="max-w-4xl mx-auto p-3 sm:p-6">
         
-        <header class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <h1 class="text-3xl font-extrabold text-blue-800 flex items-center">
-                <span class="mr-3">🩺</span> Diario Salute 
-            </h1>
-            <div id="status" class="flex items-center text-[10px] md:text-xs font-mono text-slate-500 uppercase tracking-widest bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100">
-                <span id="statusDot" class="status-dot bg-slate-300"></span>
-                <span id="statusText">Inizializzazione...</span>
+        <header class="flex justify-between items-center mb-6 bg-white p-4 rounded-3xl shadow-sm border-b-2 border-red-500">
+            <div>
+                <h1 class="text-xl font-black text-slate-800 tracking-tighter">DIARIO SALUTE</h1>
+                <div id="status" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">In attesa...</div>
             </div>
+            <button onclick="exportToExcel()" class="bg-green-600 text-white p-2 rounded-xl text-xs font-bold uppercase flex items-center gap-2">
+                <i class="fas fa-file-excel"></i> Excel
+            </button>
         </header>
 
-        <div id="setupArea" class="hidden mb-8 p-6 bg-white border-2 border-dashed border-blue-200 rounded-3xl shadow-sm">
-            <h3 class="font-bold text-blue-800 mb-4 flex items-center">⚙️ Configurazione GitHub</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input type="password" id="ghToken" placeholder="Personal Access Token" class="w-full p-3 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-400">
-                <input type="text" id="ghRepo" placeholder="utente/nome-repo" class="w-full p-3 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-400">
-                <button onclick="saveSetup()" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-xl active:scale-95 transition">Connetti</button>
-            </div>
-            <p class="mt-4 text-[10px] text-slate-400 uppercase">Assicurati che il file data.json esista nella repo.</p>
-        </div>
-
-        <div id="statsSummary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 hidden"></div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            
-            <aside class="lg:col-span-4">
-                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 sticky top-8">
-                    <div class="flex justify-between items-center mb-5">
-                        <h2 id="formTitle" class="text-lg font-bold text-slate-700">Nuova Misurazione</h2>
-                        <button id="cancelEdit" onclick="resetForm()" class="hidden text-xs text-red-500 font-bold uppercase">Annulla</button>
-                    </div>
-                    
-                    <form id="healthForm" class="space-y-4">
-                        <input type="hidden" id="editIndex" value="-1">
-                        
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data</label>
-                                <input type="date" id="date" class="w-full border-slate-200 border rounded-xl p-3 text-sm outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Ora</label>
-                                <input type="time" id="time" class="w-full border-slate-200 border rounded-xl p-3 text-sm outline-none">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
-                                <label class="block text-[10px] font-bold text-blue-600 uppercase mb-1">Sistolica (Max)</label>
-                                <input type="number" id="max" inputmode="numeric" placeholder="120" class="w-full bg-transparent text-xl font-bold outline-none" required>
-                            </div>
-                            <div class="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
-                                <label class="block text-[10px] font-bold text-blue-600 uppercase mb-1">Diastolica (Min)</label>
-                                <input type="number" id="min" inputmode="numeric" placeholder="80" class="w-full bg-transparent text-xl font-bold outline-none" required>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2">
-                            <div class="p-2 border border-slate-100 rounded-xl bg-slate-50">
-                                <label class="block text-[9px] font-bold text-slate-400 uppercase">BPM</label>
-                                <input type="number" id="bpm" inputmode="numeric" placeholder="70" class="w-full text-base font-bold outline-none bg-transparent" required>
-                            </div>
-                            <div class="p-2 border border-slate-100 rounded-xl bg-slate-50">
-                                <label class="block text-[9px] font-bold text-slate-400 uppercase">Temp °C</label>
-                                <input type="number" step="0.1" id="temp" inputmode="decimal" placeholder="36.5" class="w-full text-base font-bold outline-none bg-transparent" required>
-                            </div>
-                            <div class="p-2 border border-slate-100 rounded-xl bg-slate-50">
-                                <label class="block text-[9px] font-bold text-slate-400 uppercase">SpO2 %</label>
-                                <input type="number" id="spo2" inputmode="numeric" placeholder="98" class="w-full text-base font-bold outline-none bg-transparent" required>
-                            </div>
-                            <div class="p-2 border border-slate-100 rounded-xl bg-slate-50">
-                                <label class="block text-[9px] font-bold text-slate-400 uppercase">Pulsazioni</label>
-                                <input type="number" id="puls" inputmode="numeric" placeholder="72" class="w-full text-base font-bold outline-none bg-transparent" required>
-                            </div>
-                        </div>
-
-                        <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-700 transition active:scale-95 flex justify-center items-center gap-2">
-                            <span id="submitBtnText">Registra Dati</span>
-                        </button>
-                    </form>
+        <section class="glass p-5 rounded-[2rem] shadow-xl border border-white mb-8">
+            <form id="healthForm" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <input type="hidden" id="editIndex" value="-1">
+                
+                <div class="col-span-2 sm:col-span-1">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1">Data e Ora</label>
+                    <input type="datetime-local" id="dataOra" required class="w-full p-3 bg-white border border-slate-200 rounded-2xl outline-none focus:border-red-500">
                 </div>
-            </aside>
 
-            <main class="lg:col-span-8">
-                <div class="flex items-center justify-between mb-4 px-2">
-                    <h2 class="text-xl font-bold text-slate-800">Cronologia</h2>
-                    <button onclick="exportCSV()" class="text-xs font-bold text-blue-600 flex items-center gap-1">
-                        📥 Esporta CSV
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1">Pressione MAX</label>
+                    <input type="number" id="pressMax" placeholder="120" class="w-full p-3 bg-white border border-slate-200 rounded-2xl outline-none focus:border-red-500">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1">Pressione MIN</label>
+                    <input type="number" id="pressMin" placeholder="80" class="w-full p-3 bg-white border border-slate-200 rounded-2xl outline-none focus:border-red-500">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1">Pulsazioni</label>
+                    <input type="number" id="bpm" placeholder="70" class="w-full p-3 bg-white border border-slate-200 rounded-2xl outline-none focus:border-red-500">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1">Temperatura (°C)</label>
+                    <input type="number" step="0.1" id="temp" placeholder="36.5" class="w-full p-3 bg-white border border-slate-200 rounded-2xl outline-none focus:border-red-500">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase ml-2 mb-1">Saturazione (%)</label>
+                    <input type="number" id="spo2" placeholder="98" class="w-full p-3 bg-white border border-slate-200 rounded-2xl outline-none focus:border-red-500">
+                </div>
+
+                <div class="col-span-2 sm:col-span-3 flex gap-2 pt-2">
+                    <button type="submit" id="saveBtn" class="flex-1 bg-red-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">
+                        Salva Registrazione
+                    </button>
+                    <button type="button" onclick="resetForm()" class="bg-slate-200 text-slate-600 px-6 rounded-2xl font-bold uppercase text-xs">
+                        X
                     </button>
                 </div>
-                
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div id="recordsContainer" class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-slate-50 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase">
-                                    <th class="p-4">Data / Ora</th>
-                                    <th class="p-4 text-center">Press.</th>
-                                    <th class="p-4 text-center">BPM</th>
-                                    <th class="p-4 text-center">T/O2</th>
-                                    <th class="p-4"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="recordsList"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </main>
-        </div>
+            </form>
+        </section>
+
+        <section id="dataList" class="space-y-4">
+            </section>
+
     </div>
 
     <script>
-        let config = JSON.parse(localStorage.getItem('gh_health_config'));
-        let records = [];
+        let config = JSON.parse(localStorage.getItem('gh_crm_config')); // Usa le stesse credenziali del progetto precedente
         let fileSha = "";
+        let healthData = [];
 
-        if (!config) document.getElementById('setupArea').classList.remove('hidden');
-
-        function saveSetup() {
-            const token = document.getElementById('ghToken').value.trim();
-            const repo = document.getElementById('ghRepo').value.trim();
-            if(token && repo) {
-                localStorage.setItem('gh_health_config', JSON.stringify({token, repo}));
-                location.reload();
-            }
+        // Precompila Data e Ora
+        function setNow() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('dataOra').value = now.toISOString().slice(0, 16);
         }
 
-        async function ghFetch() {
-            if (!config) return;
-            setStatus("Sincronizzazione...", "blue", true);
-            const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
+        // Recupero Dati da GitHub
+        async function loadData() {
+            if (!config) { alert("Configura GitHub nell'altra pagina prima!"); return; }
+            document.getElementById('status').innerText = "Caricamento...";
+            const url = `https://api.github.com/repos/${config.repo}/contents/salute.json`;
             try {
                 const res = await fetch(url, { headers: { "Authorization": `token ${config.token}` } });
                 if (res.ok) {
                     const data = await res.json();
                     fileSha = data.sha;
-                    records = JSON.parse(atob(data.content));
-                    render();
-                    setStatus("Dati aggiornati", "green");
-                } else if (res.status === 404) {
-                    setStatus("Nuovo File", "orange");
+                    healthData = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+                    renderData();
+                    document.getElementById('status').innerText = "Sincronizzato";
                 } else {
-                    setStatus("Errore Config", "red");
+                    healthData = [];
+                    renderData();
+                    document.getElementById('status').innerText = "Nuovo file";
                 }
-            } catch (e) { 
-                setStatus("Offline", "red");
-            }
+            } catch (e) { document.getElementById('status').innerText = "Offline"; }
         }
 
-        async function ghPush() {
-            setStatus("Salvataggio...", "blue", true);
-            const url = `https://api.github.com/repos/${config.repo}/contents/data.json`;
-            const body = {
-                message: "Update " + new Date().toLocaleString(),
-                content: btoa(unescape(encodeURIComponent(JSON.stringify(records, null, 2)))),
-                sha: fileSha
-            };
-            try {
-                const res = await fetch(url, {
-                    method: "PUT",
-                    headers: { "Authorization": `token ${config.token}`, "Content-Type": "application/json" },
-                    body: JSON.stringify(body)
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    fileSha = data.content.sha;
-                    setStatus("Sincronizzato", "green");
+        // Render dei dati con raggruppamento MESE
+        function renderData() {
+            const container = document.getElementById('dataList');
+            container.innerHTML = "";
+            
+            // Ordina per data decrescente
+            healthData.sort((a, b) => new Date(b.dataOra) - new Date(a.dataOra));
+
+            let currentMonth = "";
+
+            healthData.forEach((item, index) => {
+                const dateObj = new Date(item.dataOra);
+                const monthYear = dateObj.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+
+                if (monthYear !== currentMonth) {
+                    currentMonth = monthYear;
+                    const header = document.createElement('div');
+                    header.className = "month-header rounded-xl";
+                    header.innerText = currentMonth;
+                    container.appendChild(header);
                 }
-            } catch(e) {
-                setStatus("Errore salvataggio", "red");
-            }
-        }
 
-        function setStatus(text, color, isSyncing = false) {
-            const dot = document.getElementById('statusDot');
-            const txt = document.getElementById('statusText');
-            txt.innerText = text;
-            txt.className = isSyncing ? "syncing" : "";
-            const colors = { blue: "bg-blue-500", green: "bg-green-500", red: "bg-red-500", orange: "bg-orange-500" };
-            dot.className = `status-dot ${colors[color] || "bg-slate-300"}`;
-        }
-
-        function getPressureColor(max, min) {
-            if (max >= 140 || min >= 90) return 'text-red-600';
-            if (max >= 130 || min >= 85) return 'text-orange-500';
-            return 'text-blue-900';
-        }
-
-        function render() {
-            const list = document.getElementById('recordsList');
-            if (records.length === 0) {
-                list.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-slate-400 italic">Nessun dato.</td></tr>`;
-                return;
-            }
-
-            updateStats();
-
-            list.innerHTML = records.map((r, i) => {
-                const pressColor = getPressureColor(r.max, r.min);
-                return `
-                <tr class="row-hover border-b border-slate-50 transition group">
-                    <td class="p-3">
-                        <div class="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">${r.date}</div>
-                        <div class="text-sm font-black text-slate-800">${r.time}</div>
-                    </td>
-                    <td class="p-3 text-center">
-                        <span class="text-base font-black ${pressColor}">${r.max}/${r.min}</span>
-                    </td>
-                    <td class="p-3 text-center">
-                        <span class="text-base font-black text-red-500">${r.bpm}</span>
-                    </td>
-                    <td class="p-3 text-center">
-                        <div class="text-[10px] font-bold text-slate-600">${r.temp}°</div>
-                        <div class="text-[10px] font-bold text-cyan-600">${r.spo2}%</div>
-                    </td>
-                    <td class="p-3 text-right">
-                        <div class="flex justify-end gap-1">
-                            <button onclick="editRec(${i})" class="mobile-action-btn bg-blue-50 text-blue-500 rounded-lg">
-                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                            </button>
-                            <button onclick="deleteRec(${i})" class="mobile-action-btn bg-red-50 text-red-500 rounded-lg">
-                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                            </button>
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between gap-2 mb-2";
+                card.innerHTML = `
+                    <div class="flex-1">
+                        <div class="text-[10px] font-black text-red-500 uppercase">${dateObj.toLocaleDateString('it-IT')} ore ${dateObj.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'})}</div>
+                        <div class="grid grid-cols-3 gap-2 mt-1">
+                            <div class="text-xs text-slate-600">📌 <span class="font-bold text-slate-900">${item.pressMax}/${item.pressMin}</span></div>
+                            <div class="text-xs text-slate-600">💓 <span class="font-bold text-slate-900">${item.bpm}</span></div>
+                            <div class="text-xs text-slate-600">🌡️ <span class="font-bold text-slate-900">${item.temp}°</span></div>
+                            <div class="text-xs text-slate-600">💧 <span class="font-bold text-slate-900">${item.spo2}%</span></div>
                         </div>
-                    </td>
-                </tr>`;
-            }).join('');
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="editEntry(${index})" class="text-blue-500 p-2"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteEntry(${index})" class="text-red-400 p-2"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
         }
 
-        function updateStats() {
-            if (records.length === 0) return;
-            const lastN = records.slice(0, 5);
-            const avgMax = Math.round(lastN.reduce((a, b) => a + Number(b.max), 0) / lastN.length);
-            const avgMin = Math.round(lastN.reduce((a, b) => a + Number(b.min), 0) / lastN.length);
-            const statsContainer = document.getElementById('statsSummary');
-            statsContainer.classList.remove('hidden');
-            statsContainer.innerHTML = `
-                <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
-                    <p class="text-[9px] font-bold text-slate-400 uppercase">Media (5)</p>
-                    <p class="text-lg font-black text-blue-600">${avgMax}/${avgMin}</p>
-                </div>
-                <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
-                    <p class="text-[9px] font-bold text-slate-400 uppercase">Media BPM</p>
-                    <p class="text-lg font-black text-red-500">${Math.round(lastN.reduce((a, b) => a + Number(b.bpm), 0) / lastN.length)}</p>
-                </div>
-                <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
-                    <p class="text-[9px] font-bold text-slate-400 uppercase">O2 Ultimo</p>
-                    <p class="text-lg font-black text-cyan-600">${records[0].spo2}%</p>
-                </div>
-                <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
-                    <p class="text-[9px] font-bold text-slate-400 uppercase">Records</p>
-                    <p class="text-lg font-black text-slate-700">${records.length}</p>
-                </div>`;
+        // Salvataggio su GitHub
+        document.getElementById('healthForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const index = parseInt(document.getElementById('editIndex').value);
+            
+            const entry = {
+                dataOra: document.getElementById('dataOra').value,
+                pressMax: document.getElementById('pressMax').value,
+                pressMin: document.getElementById('pressMin').value,
+                bpm: document.getElementById('bpm').value,
+                temp: document.getElementById('temp').value,
+                spo2: document.getElementById('spo2').value
+            };
+
+            if (index === -1) {
+                healthData.unshift(entry);
+            } else {
+                healthData[index] = entry;
+            }
+
+            await syncToGithub(`Update Salute: ${entry.dataOra}`);
+            resetForm();
+        };
+
+        async function syncToGithub(msg) {
+            document.getElementById('status').innerText = "Salvataggio...";
+            const url = `https://api.github.com/repos/${config.repo}/contents/salute.json`;
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(healthData, null, 2))));
+            
+            const res = await fetch(url, {
+                method: "PUT",
+                headers: { "Authorization": `token ${config.token}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ message: msg, content, sha: fileSha })
+            });
+
+            if (res.ok) {
+                const resData = await res.json();
+                fileSha = resData.content.sha;
+                renderData();
+                document.getElementById('status').innerText = "Sincronizzato";
+            }
         }
 
-        function editRec(index) {
-            const r = records[index];
+        function editEntry(index) {
+            const entry = healthData[index];
+            document.getElementById('dataOra').value = entry.dataOra;
+            document.getElementById('pressMax').value = entry.pressMax;
+            document.getElementById('pressMin').value = entry.pressMin;
+            document.getElementById('bpm').value = entry.bpm;
+            document.getElementById('temp').value = entry.temp;
+            document.getElementById('spo2').value = entry.spo2;
             document.getElementById('editIndex').value = index;
-            document.getElementById('date').value = r.date;
-            document.getElementById('time').value = r.time;
-            document.getElementById('max').value = r.max;
-            document.getElementById('min').value = r.min;
-            document.getElementById('bpm').value = r.bpm;
-            document.getElementById('temp').value = r.temp;
-            document.getElementById('spo2').value = r.spo2;
-            document.getElementById('puls').value = r.puls || "";
-            document.getElementById('formTitle').innerText = "Modifica Dati";
-            document.getElementById('submitBtnText').innerText = "Salva Modifiche";
-            document.getElementById('cancelEdit').classList.remove('hidden');
+            document.getElementById('saveBtn').innerText = "AGGIORNA DATI";
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function deleteEntry(index) {
+            if (confirm("Eliminare questa registrazione?")) {
+                healthData.splice(index, 1);
+                await syncToGithub("Cancellazione riga salute");
+            }
         }
 
         function resetForm() {
             document.getElementById('healthForm').reset();
             document.getElementById('editIndex').value = "-1";
-            document.getElementById('formTitle').innerText = "Nuova Misurazione";
-            document.getElementById('submitBtnText').innerText = "Registra Dati";
-            document.getElementById('cancelEdit').classList.add('hidden');
+            document.getElementById('saveBtn').innerText = "SALVA REGISTRAZIONE";
             setNow();
         }
 
-        document.getElementById('healthForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const index = parseInt(document.getElementById('editIndex').value);
-            const newRec = {
-                date: document.getElementById('date').value,
-                time: document.getElementById('time').value,
-                max: document.getElementById('max').value,
-                min: document.getElementById('min').value,
-                bpm: document.getElementById('bpm').value,
-                temp: document.getElementById('temp').value,
-                spo2: document.getElementById('spo2').value,
-                puls: document.getElementById('puls').value,
-            };
-            if (index === -1) records.unshift(newRec); else records[index] = newRec;
-            render();
-            await ghPush();
-            resetForm();
-        };
-
-        window.deleteRec = async (i) => {
-            if(confirm("Eliminare definitivamente?")) {
-                records.splice(i, 1);
-                render();
-                await ghPush();
-            }
-        };
-
-        function setNow() {
-            const n = new Date();
-            document.getElementById('date').value = n.toISOString().split('T')[0];
-            document.getElementById('time').value = n.toTimeString().slice(0,5);
+        function exportToExcel() {
+            const ws = XLSX.utils.json_to_sheet(healthData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Salute");
+            XLSX.writeFile(wb, "Monitoraggio_Salute.xlsx");
         }
 
-        function exportCSV() {
-            if (records.length === 0) return;
-            const headers = "Data,Ora,Max,Min,BPM,Temp,SpO2\n";
-            const rows = records.map(r => `${r.date},${r.time},${r.max},${r.min},${r.bpm},${r.temp},${r.spo2}`).join("\n");
-            const blob = new Blob([headers + rows], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `salute_export.csv`;
-            a.click();
-        }
-
-        setNow();
-        if (config) ghFetch();
+        window.onload = () => { setNow(); loadData(); };
     </script>
 </body>
 </html>
