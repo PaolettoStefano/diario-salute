@@ -9,9 +9,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         input { font-size: 16px !important; }
-        .month-section { border-left: 4px solid #ef4444; margin-top: 20px; padding-left: 10px; }
-        .month-label { font-weight: 900; text-transform: uppercase; color: #7f1d1d; font-size: 0.7rem; letter-spacing: 0.1em; margin-bottom: 8px; }
-        .glass-effect { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+        .month-section { border-left: 4px solid #ef4444; margin-top: 25px; padding-left: 12px; margin-bottom: 10px; }
+        .month-label { font-weight: 900; text-transform: uppercase; color: #7f1d1d; font-size: 0.8rem; letter-spacing: 0.1em; margin-bottom: 10px; }
+        .glass-effect { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen pb-10">
@@ -19,10 +19,13 @@
     <div class="max-w-2xl mx-auto p-4">
         
         <header class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-black tracking-tighter text-slate-800">HEALTH<span class="text-red-600">LOG</span></h1>
+            <div>
+                <h1 class="text-2xl font-black tracking-tighter text-slate-800">HEALTH<span class="text-red-600">LOG</span></h1>
+                <p id="status" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sincronizzazione...</p>
+            </div>
             <div class="flex gap-2">
-                <button onclick="exportToExcel()" class="bg-green-600 text-white px-3 py-2 rounded-xl text-xs font-bold"><i class="fas fa-file-excel"></i> EXCEL</button>
-                <button onclick="setupCloud()" class="bg-slate-800 text-white px-3 py-2 rounded-xl text-xs"><i class="fas fa-cog"></i></button>
+                <button onclick="exportToExcel()" class="bg-green-600 text-white px-3 py-2 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all"><i class="fas fa-file-excel"></i> EXCEL</button>
+                <button onclick="setupCloud()" class="bg-slate-800 text-white px-3 py-2 rounded-xl text-xs shadow-md"><i class="fas fa-cog"></i></button>
             </div>
         </header>
 
@@ -32,12 +35,12 @@
                 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="col-span-2">
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Data e Ora</label>
-                        <input type="datetime-local" id="dataOra" required class="w-full p-3 bg-white border border-slate-200 rounded-2xl focus:border-red-500 outline-none">
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-2">Data e Ora</label>
+                        <input type="datetime-local" id="dataOra" required class="w-full p-4 bg-white border border-slate-200 rounded-2xl focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all">
                     </div>
                     
                     <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Pressione (Max/Min)</label>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-2">Pressione (Max/Min)</label>
                         <div class="flex gap-1 items-center">
                             <input type="number" id="pMax" placeholder="120" class="w-full p-3 bg-white border border-slate-200 rounded-2xl focus:border-red-500 outline-none">
                             <span class="text-slate-300">/</span>
@@ -46,34 +49,35 @@
                     </div>
 
                     <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Pulsazioni (BPM)</label>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-2">Pulsazioni (BPM)</label>
                         <input type="number" id="bpm" placeholder="72" class="w-full p-3 bg-white border border-slate-200 rounded-2xl focus:border-red-500 outline-none">
                     </div>
 
                     <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Temperatura (°C)</label>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-2">Temperatura (°C)</label>
                         <input type="number" step="0.1" id="temp" placeholder="36.5" class="w-full p-3 bg-white border border-slate-200 rounded-2xl focus:border-red-500 outline-none">
                     </div>
 
                     <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Saturazione (%)</label>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-2">Saturazione (%)</label>
                         <input type="number" id="spo2" placeholder="98" class="w-full p-3 bg-white border border-slate-200 rounded-2xl focus:border-red-500 outline-none">
                     </div>
                 </div>
 
                 <div class="flex gap-2 pt-2">
                     <button type="submit" id="submitBtn" class="flex-1 bg-red-600 text-white py-4 rounded-3xl font-black uppercase tracking-widest shadow-lg shadow-red-200 active:scale-95 transition-all">
-                        Salva Dati
+                        Salva Registrazione
                     </button>
                     <button type="button" id="cancelBtn" onclick="resetForm()" class="hidden bg-slate-200 text-slate-600 px-6 rounded-3xl font-bold uppercase text-xs">
-                        X
+                        ANNULLA
                     </button>
                 </div>
             </form>
         </section>
 
-        <div id="dataList" class="space-y-6">
-            </div>
+        <div id="dataList" class="space-y-2">
+            <p class="text-center text-slate-400 text-xs italic">Caricamento dati...</p>
+        </div>
 
     </div>
 
@@ -82,18 +86,20 @@
         let healthData = [];
         let fileSha = "";
 
-        // Inizializzazione
-        async function init() {
+        // Inizializzazione rapida
+        window.onload = () => {
+            setNow(); // Precompila subito data e ora
             if (!config) {
                 setupCloud();
-                return;
+            } else {
+                loadData();
             }
-            loadData();
-            setNow();
-        }
+        };
 
+        // Funzione per impostare Data e Ora Attuale
         function setNow() {
             const now = new Date();
+            // Correzione fuso orario per l'input datetime-local
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             document.getElementById('dataOra').value = now.toISOString().slice(0, 16);
         }
@@ -111,22 +117,169 @@
         async function loadData() {
             const url = `https://api.github.com/repos/${config.repo}/contents/health_data.json`;
             try {
-                const res = await fetch(url, { headers: { "Authorization": `token ${config.token}` }, cache: 'no-store' });
+                const res = await fetch(url, { 
+                    headers: { "Authorization": `token ${config.token}` },
+                    cache: 'no-store' 
+                });
                 if (res.ok) {
                     const data = await res.json();
                     fileSha = data.sha;
                     healthData = JSON.parse(decodeURIComponent(escape(atob(data.content))));
                     renderList();
+                    document.getElementById('status').innerText = "Online - Dati caricati";
+                } else {
+                    document.getElementById('dataList').innerHTML = `<p class="text-center text-slate-400 text-xs">Nessun dato trovato. Inizia il primo inserimento!</p>`;
+                    document.getElementById('status').innerText = "Online - File nuovo";
                 }
-            } catch (e) { console.error("Errore caricamento", e); }
+            } catch (e) { 
+                document.getElementById('status').innerText = "Errore connessione";
+                console.error(e);
+            }
         }
 
         function renderList() {
             const container = document.getElementById('dataList');
             container.innerHTML = "";
             
-            // Ordina per data decrescente
+            if (healthData.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-400 text-xs">Nessuna registrazione presente.</p>`;
+                return;
+            }
+
+            // Ordina per data decrescente (più recenti in alto)
             healthData.sort((a, b) => new Date(b.dataOra) - new Date(a.dataOra));
 
             let currentMonth = "";
             let currentSection = null;
+
+            healthData.forEach((item, index) => {
+                const date = new Date(item.dataOra);
+                const monthLabel = date.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+
+                if (monthLabel !== currentMonth) {
+                    currentMonth = monthLabel;
+                    const sectionWrapper = document.createElement('div');
+                    sectionWrapper.className = "month-section";
+                    sectionWrapper.innerHTML = `<div class="month-label">${currentMonth}</div>`;
+                    container.appendChild(sectionWrapper);
+                    currentSection = sectionWrapper;
+                }
+
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between mb-3";
+                card.innerHTML = `
+                    <div class="flex-1">
+                        <div class="text-[10px] font-black text-red-500 uppercase mb-1">
+                            ${date.toLocaleDateString('it-IT')} - ${date.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'})}
+                        </div>
+                        <div class="grid grid-cols-4 gap-2 text-center">
+                            <div><p class="text-[8px] text-slate-400 font-bold uppercase">Press.</p><p class="text-xs font-black text-slate-800">${item.pMax}/${item.pMin}</p></div>
+                            <div><p class="text-[8px] text-slate-400 font-bold uppercase">Bpm</p><p class="text-xs font-black text-slate-800">${item.bpm}</p></div>
+                            <div><p class="text-[8px] text-slate-400 font-bold uppercase">Temp.</p><p class="text-xs font-black text-slate-800">${item.temp}°</p></div>
+                            <div><p class="text-[8px] text-slate-400 font-bold uppercase">SpO2</p><p class="text-xs font-black text-slate-800">${item.spo2}%</p></div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 ml-4 border-l pl-3 border-slate-100">
+                        <button onclick="editItem(${index})" class="text-blue-500 px-2 py-1 active:scale-125 transition-transform"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteItem(${index})" class="text-slate-300 px-2 py-1 active:text-red-500"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                `;
+                currentSection.appendChild(card);
+            });
+        }
+
+        document.getElementById('healthForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const originalText = btn.innerText;
+            btn.disabled = true; btn.innerText = "SALVATAGGIO...";
+
+            const entry = {
+                dataOra: document.getElementById('dataOra').value,
+                pMax: document.getElementById('pMax').value,
+                pMin: document.getElementById('pMin').value,
+                bpm: document.getElementById('bpm').value,
+                temp: document.getElementById('temp').value,
+                spo2: document.getElementById('spo2').value
+            };
+
+            const editIndex = parseInt(document.getElementById('editIndex').value);
+            if (editIndex > -1) {
+                healthData[editIndex] = entry;
+            } else {
+                healthData.unshift(entry);
+            }
+
+            const success = await saveToCloud();
+            if (success) {
+                resetForm();
+            }
+            btn.disabled = false; btn.innerText = originalText;
+        };
+
+        async function saveToCloud() {
+            const url = `https://api.github.com/repos/${config.repo}/contents/health_data.json`;
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(healthData, null, 2))));
+            const body = { message: "Update HealthData", content, sha: fileSha };
+
+            try {
+                const res = await fetch(url, {
+                    method: "PUT",
+                    headers: { "Authorization": `token ${config.token}`, "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                });
+
+                if (res.ok) {
+                    const resData = await res.json();
+                    fileSha = resData.content.sha;
+                    renderList();
+                    return true;
+                } else {
+                    alert("Errore GitHub: Verifica il token o la connessione.");
+                    return false;
+                }
+            } catch (e) {
+                alert("Errore di rete.");
+                return false;
+            }
+        }
+
+        function editItem(index) {
+            const item = healthData[index];
+            document.getElementById('dataOra').value = item.dataOra;
+            document.getElementById('pMax').value = item.pMax;
+            document.getElementById('pMin').value = item.pMin;
+            document.getElementById('bpm').value = item.bpm;
+            document.getElementById('temp').value = item.temp;
+            document.getElementById('spo2').value = item.spo2;
+            document.getElementById('editIndex').value = index;
+            document.getElementById('submitBtn').innerText = "AGGIORNA RIGA";
+            document.getElementById('cancelBtn').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function deleteItem(index) {
+            if (confirm("Eliminare definitivamente questa registrazione?")) {
+                healthData.splice(index, 1);
+                await saveToCloud();
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('healthForm').reset();
+            document.getElementById('editIndex').value = "-1";
+            document.getElementById('submitBtn').innerText = "Salva Registrazione";
+            document.getElementById('cancelBtn').classList.add('hidden');
+            setNow(); // Reimposta data e ora attuale
+        }
+
+        function exportToExcel() {
+            if (healthData.length === 0) { alert("Nessun dato da esportare"); return; }
+            const ws = XLSX.utils.json_to_sheet(healthData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Salute");
+            XLSX.writeFile(wb, "Diario_Salute.xlsx");
+        }
+    </script>
+</body>
+</html>
