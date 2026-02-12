@@ -49,6 +49,16 @@ button {
   color: white;
 }
 
+.warning {
+  background: #e67e22;
+  color: white;
+}
+
+.danger {
+  background: #e74c3c;
+  color: white;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -132,7 +142,7 @@ input {
 
 <div class="modal" id="modal">
   <div class="modal-content">
-    <h3>Inserisci Parametri</h3>
+    <h3 id="modalTitle">Inserisci Parametri</h3>
 
     <label>Data</label>
     <input type="date" id="data">
@@ -167,11 +177,29 @@ input {
 
 <script>
 let records = JSON.parse(localStorage.getItem("parametri")) || [];
+let editIndex = -1;
 
-function openModal() {
+function openModal(index = -1) {
   const now = new Date();
-  document.getElementById("data").value = now.toISOString().split('T')[0];
-  document.getElementById("ora").value = now.toTimeString().slice(0,5);
+  if(index >= 0){
+    const r = records[index];
+    document.getElementById("data").value = r.data;
+    document.getElementById("ora").value = r.ora;
+    document.getElementById("massima").value = r.massima;
+    document.getElementById("minima").value = r.minima;
+    document.getElementById("pulsazioni").value = r.pulsazioni;
+    document.getElementById("temp").value = r.temp;
+    document.getElementById("spo2").value = r.spo2;
+    document.getElementById("bpm").value = r.bpm;
+    document.getElementById("modalTitle").innerText = "Modifica Parametri";
+    editIndex = index;
+  } else {
+    document.getElementById("data").value = now.toISOString().split('T')[0];
+    document.getElementById("ora").value = now.toTimeString().slice(0,5);
+    document.getElementById("modalTitle").innerText = "Inserisci Parametri";
+    editIndex = -1;
+    document.querySelectorAll("#modal input").forEach(i => i.value = "");
+  }
   document.getElementById("modal").style.display = "flex";
 }
 
@@ -191,10 +219,23 @@ function saveData() {
     bpm: bpm.value
   };
 
-  records.push(record);
+  if(editIndex >= 0){
+    records[editIndex] = record;
+  } else {
+    records.push(record);
+  }
+
   localStorage.setItem("parametri", JSON.stringify(records));
   closeModal();
   renderTable();
+}
+
+function deleteRecord(index){
+  if(confirm("Eliminare questo record?")){
+    records.splice(index,1);
+    localStorage.setItem("parametri", JSON.stringify(records));
+    renderTable();
+  }
 }
 
 function renderTable() {
@@ -207,10 +248,10 @@ function renderTable() {
   }
 
   let grouped = {};
-  records.forEach(r => {
+  records.forEach((r,i) => {
     let month = r.data.substring(0,7);
     if (!grouped[month]) grouped[month] = [];
-    grouped[month].push(r);
+    grouped[month].push({...r, index: i});
   });
 
   Object.keys(grouped).sort().reverse().forEach(month => {
@@ -230,6 +271,7 @@ function renderTable() {
         <th>Temp</th>
         <th>SP02</th>
         <th>BPM</th>
+        <th>Azioni</th>
       </tr>
     `;
 
@@ -244,6 +286,10 @@ function renderTable() {
           <td>${r.temp}</td>
           <td>${r.spo2}</td>
           <td>${r.bpm}</td>
+          <td>
+            <button class="warning" onclick="openModal(${r.index})">✏️</button>
+            <button class="danger" onclick="deleteRecord(${r.index})">🗑️</button>
+          </td>
         </tr>
       `;
     });
