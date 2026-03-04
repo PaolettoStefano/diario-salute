@@ -19,7 +19,8 @@ table { width:100%; border-collapse:collapse; background:white; border-radius:10
 th, td { padding:8px; text-align:center; font-size:14px; }
 th { background:#34495e; color:white; }
 tr:nth-child(even) { background:#f2f2f2; }
-.month-header { background:#dfe6e9; font-weight:bold; text-align:left; padding:10px; font-size:14px; }
+.month-header { background:#dfe6e9; font-weight:bold; text-align:left; padding:10px; font-size:14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-radius:8px; margin-top:10px; }
+.month-header:hover { background:#d0d7de; }
 .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); justify-content:center; align-items:center; z-index:9999; }
 .modal-content { background:white; padding:25px; border-radius:16px; width:95%; max-width:500px; box-shadow:0 4px 12px rgba(0,0,0,0.2);}
 .modal-content h3 { margin-top:0; margin-bottom:15px; font-size:18px; text-align:center; color:#2c3e50;}
@@ -186,21 +187,36 @@ function getValueColor(type,val){
   return "color-blue";
 }
 
+function toggleMonth(header) {
+  const table = header.nextElementSibling;
+  const isHidden = table.style.display === "none";
+  table.style.display = isHidden ? "table" : "none";
+  header.querySelector('.arrow').innerText = isHidden ? "▼" : "▶";
+}
+
 function renderTable(){
   const container=document.getElementById("tableContainer"); container.innerHTML="";
   if(records.length===0){ container.innerHTML="<p>Nessun dato registrato</p>"; return; }
 
   let grouped={}; records.forEach((r,i)=>{ const month=r.data.substring(0,7); if(!grouped[month]) grouped[month]=[]; grouped[month].push({...r,index:i}); });
 
-  Object.keys(grouped).sort().reverse().forEach(monthKey=>{
-    // Formattazione del nome del mese e anno in italiano
+  const sortedMonths = Object.keys(grouped).sort().reverse();
+
+  sortedMonths.forEach((monthKey, idx)=>{
     const dateObj = new Date(monthKey + "-01");
     const monthName = new Intl.DateTimeFormat('it-IT', { month: 'long', year: 'numeric' }).format(dateObj);
     const formattedTitle = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
-    const div=document.createElement("div"); div.className="month-header"; div.innerText=formattedTitle+" ("+grouped[monthKey].length+" misurazioni)"; container.appendChild(div);
+    const div=document.createElement("div"); 
+    div.className="month-header"; 
+    div.innerHTML = `<span>${formattedTitle} (${grouped[monthKey].length} misurazioni)</span> <span class="arrow">${idx === 0 ? "▼" : "▶"}</span>`;
+    div.onclick = function() { toggleMonth(this); };
+    container.appendChild(div);
 
     const table=document.createElement("table");
+    // Lascia aperto solo il primo mese (quello più recente)
+    table.style.display = idx === 0 ? "table" : "none";
+    
     table.innerHTML=`<tr>
       <th>Data</th><th>Ora</th><th>Max</th><th>Min</th><th>Puls</th><th>SP02</th><th>BPM</th><th>Temp</th><th>Azioni</th>
     </tr>`;
