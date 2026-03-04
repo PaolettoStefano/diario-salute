@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grafico Parametri Vitali</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; background: #f4f6f9; color: #2c3e50; }
+        header { background: #2c3e50; color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; position: relative; }
+        .back-btn { position: absolute; left: 15px; top: 15px; color: white; text-decoration: none; font-size: 14px; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 5px; }
+        .container { padding: 15px; max-width: 1000px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        #status { margin-bottom: 15px; font-size: 14px; text-align: center; }
+        .controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        button { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; background: #3498db; color: white; }
+        canvas { width: 100% !important; height: 400px !important; }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="javascript:history.back()" class="back-btn">← Indietro</a>
+    Andamento Parametri Vitali
+</header>
+
+<div class="container">
+    <div id="status">Inizializzazione...</div>
+
+    <div class="controls">
+        <button onclick="updateChart('all')">Tutti i dati</button>
+        <button onclick="updateChart(30)">Ultimi 30gg</button>
+        <button onclick="updateChart(7)">Ultimi 7gg</button>
+    </div>
+
+    <div class="card">
+        <canvas id="healthChart"></canvas>
+    </div>
+</div>
+
+<script>
+    let records = [];
+    let healthChart = null;
+    const config = JSON.parse(localStorage.getItem('gh_health_config'));
+
+    function setStatus(msg, color = 'black') {
+        const statusEl = document.getElementById('status');
+        statusEl.innerText = msg;
+        statusEl.style.color = color;
+    }
+
+    async function fetchData() {
+        if (!config) {
+            setStatus("Configurazione GitHub mancante! Torna alla pagina principale.", "red");
+            return;
+        }
+
+        setStatus("Caricamento dati da GitHub...", "blue");
+        const url = `https://api.github.com/repos/${config.repo}/contents/dati.json`;
+        
+        try {
+            const res = await fetch(url, { headers: { Authorization: `token ${config.token}` } });
+            if (res.ok) {
+                const data = await res.json();
+                records = JSON.parse(atob(data.content));
+                // Ordina dal meno recente al più recente per il grafico (linea temporale)
+                records.sort((a, b) => new Date(a.data + " " + a.ora) - new Date(b.data + " " + b.ora));
+                setStatus("Dati caricati correttamente", "green");
+                updateChart('all');
+            } else {
+                setStatus("Errore nel recupero dati", "red");
+            }
+        } catch (e) {
+            setStatus("Errore di rete", "red");
+        }
+    }
+
+    function updateChart(filter) {
+        const ctx = document.getElementById('healthChart').getContext('2d');
+        let dataToShow = records;
+
+        if (filter !== 'all') {
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - filter);
+            dataToShow = records.filter(r => new Date(r.data) >= cutoff);
+        }
+
+        const labels = dataToShow.map(r => r.data + " " + r.ora);
+        const dataMassima = dataToShow.map(r => r.massima);
+        const dataMinima = dataToShow.map(r => r.minima);
+        const dataBPM = dataToShow.map(r => r.bpm);
+
+        if (healthChart) healthChart.destroy();
+
+        healthChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Pressione Max',
+                        data: dataMassima,
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Pressione Min',
+                        data: dataMinima,
+                        borderColor: '#e67e22',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'BPM',
+                        data: dataBPM,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: { beginAtZero: false, title: { display: true, text: 'Valori' } },
+                    x: { display: false } // Nascondi etichette fitte per pulizia
+                }
+            }
+        });
+    }
+
+    // Avvio
+    fetchData();
+</script>
+
+</body>
+</html>
