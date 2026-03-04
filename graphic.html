@@ -12,9 +12,10 @@
         .container { padding: 15px; max-width: 1000px; margin: auto; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         #status { margin-bottom: 15px; font-size: 14px; text-align: center; }
-        .controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-        button { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; background: #3498db; color: white; }
-        canvas { width: 100% !important; height: 400px !important; }
+        .controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        button { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; background: #3498db; color: white; transition: 0.2s; }
+        button:hover { background: #2980b9; }
+        canvas { width: 100% !important; height: 450px !important; }
     </style>
 </head>
 <body>
@@ -63,7 +64,7 @@
             if (res.ok) {
                 const data = await res.json();
                 records = JSON.parse(atob(data.content));
-                // Ordina dal meno recente al più recente per il grafico (linea temporale)
+                // Ordina cronologicamente
                 records.sort((a, b) => new Date(a.data + " " + a.ora) - new Date(b.data + " " + b.ora));
                 setStatus("Dati caricati correttamente", "green");
                 updateChart('all');
@@ -86,10 +87,7 @@
         }
 
         const labels = dataToShow.map(r => r.data + " " + r.ora);
-        const dataMassima = dataToShow.map(r => r.massima);
-        const dataMinima = dataToShow.map(r => r.minima);
-        const dataBPM = dataToShow.map(r => r.bpm);
-
+        
         if (healthChart) healthChart.destroy();
 
         healthChart = new Chart(ctx, {
@@ -99,28 +97,41 @@
                 datasets: [
                     {
                         label: 'Pressione Max',
-                        data: dataMassima,
-                        borderColor: '#e74c3c',
+                        data: dataToShow.map(r => r.massima),
+                        borderColor: '#ff3b30', // Rosso Apple
                         backgroundColor: 'transparent',
-                        borderWidth: 2,
-                        tension: 0.3
+                        borderWidth: 3,
+                        tension: 0.3,
+                        yAxisID: 'y'
                     },
                     {
                         label: 'Pressione Min',
-                        data: dataMinima,
-                        borderColor: '#e67e22',
+                        data: dataToShow.map(r => r.minima),
+                        borderColor: '#ff9500', // Arancione Apple
                         backgroundColor: 'transparent',
-                        borderWidth: 2,
-                        tension: 0.3
+                        borderWidth: 3,
+                        tension: 0.3,
+                        yAxisID: 'y'
                     },
                     {
                         label: 'BPM',
-                        data: dataBPM,
-                        borderColor: '#3498db',
-                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        data: dataToShow.map(r => r.bpm),
+                        borderColor: '#007aff', // Blu Apple
+                        backgroundColor: 'rgba(0, 122, 255, 0.1)',
                         borderWidth: 2,
                         fill: true,
-                        tension: 0.3
+                        tension: 0.3,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Temp (°C)',
+                        data: dataToShow.map(r => r.temp),
+                        borderColor: '#28cd41', // Verde Apple
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        borderDash: [5, 5], // Linea tratteggiata per distinguerla
+                        tension: 0.3,
+                        yAxisID: 'y1' // Usa asse destro
                     }
                 ]
             },
@@ -129,17 +140,31 @@
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    legend: { position: 'top' }
+                    legend: { position: 'top', labels: { usePointStyle: true, padding: 20 } }
                 },
                 scales: {
-                    y: { beginAtZero: false, title: { display: true, text: 'Valori' } },
-                    x: { display: false } // Nascondi etichette fitte per pulizia
+                    y: { 
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: { display: true, text: 'Pressione / BPM' },
+                        beginAtZero: false 
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'Temperatura (°C)' },
+                        grid: { drawOnChartArea: false }, // Evita sovrapposizione griglie
+                        suggestedMin: 35,
+                        suggestedMax: 40
+                    },
+                    x: { display: false }
                 }
             }
         });
     }
 
-    // Avvio
     fetchData();
 </script>
 
