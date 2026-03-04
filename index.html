@@ -46,7 +46,6 @@ input:focus { border-color:#3498db; box-shadow:0 0 5px rgba(52,152,219,0.3); out
 <div class="container">
   <div id="status">Stato: <span id="statusText">Inizializzazione...</span></div>
 
-  <!-- Collapsible GitHub setup -->
   <button type="button" class="collapsible">⚙️ Configurazione GitHub</button>
   <div class="content" id="setupArea">
     <input type="password" id="ghToken" placeholder="Personal Access Token">
@@ -193,14 +192,19 @@ function renderTable(){
 
   let grouped={}; records.forEach((r,i)=>{ const month=r.data.substring(0,7); if(!grouped[month]) grouped[month]=[]; grouped[month].push({...r,index:i}); });
 
-  Object.keys(grouped).sort().reverse().forEach(month=>{
-    const div=document.createElement("div"); div.className="month-header"; div.innerText="Mese: "+month+" ("+grouped[month].length+" misurazioni)"; container.appendChild(div);
+  Object.keys(grouped).sort().reverse().forEach(monthKey=>{
+    // Formattazione del nome del mese e anno in italiano
+    const dateObj = new Date(monthKey + "-01");
+    const monthName = new Intl.DateTimeFormat('it-IT', { month: 'long', year: 'numeric' }).format(dateObj);
+    const formattedTitle = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+    const div=document.createElement("div"); div.className="month-header"; div.innerText=formattedTitle+" ("+grouped[monthKey].length+" misurazioni)"; container.appendChild(div);
 
     const table=document.createElement("table");
     table.innerHTML=`<tr>
       <th>Data</th><th>Ora</th><th>Max</th><th>Min</th><th>Puls</th><th>SP02</th><th>BPM</th><th>Temp</th><th>Azioni</th>
     </tr>`;
-    grouped[month].forEach(r=>{
+    grouped[monthKey].forEach(r=>{
       table.innerHTML+=`<tr>
         <td>${r.data}</td><td>${r.ora}</td>
         <td class="${getValueColor('max',r.massima)}">${r.massima}</td>
