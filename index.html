@@ -100,7 +100,8 @@ input:focus { border-color:#3498db; box-shadow:0 0 5px rgba(52,152,219,0.3); out
 
     <div class="actions">
       <button onclick="closeModal()">Annulla</button>
-      <button class="success" onclick="saveData()">Salva</button>
+      <button class="warning" id="btnSaveNext" onclick="saveData(true)">Salva e Nuovo</button>
+      <button class="success" onclick="saveData(false)">Salva</button>
     </div>
   </div>
 </div>
@@ -164,19 +165,54 @@ async function ghPush(){
 
 function openModal(index=-1){
   const now=new Date();
-  if(index>=0){ const r=records[index]; data.value=r.data; ora.value=r.ora; massima.value=r.massima; minima.value=r.minima; pulsazioni.value=r.pulsazioni; temp.value=r.temp; spo2.value=r.spo2; bpm.value=r.bpm; modalTitle.innerText="Modifica Parametri"; editIndex=index; }
-  else{ data.value=now.toISOString().split('T')[0]; ora.value=now.toTimeString().slice(0,5); modalTitle.innerText="Inserisci Parametri"; editIndex=-1; document.querySelectorAll("#modal input").forEach(i=>{ if(i.id!=="data" && i.id!=="ora") i.value=""; }); }
+  const btnSaveNext = document.getElementById('btnSaveNext');
+  
+  if(index>=0){ 
+    const r=records[index]; 
+    data.value=r.data; 
+    ora.value=r.ora; 
+    massima.value=r.massima; 
+    minima.value=r.minima; 
+    pulsazioni.value=r.pulsazioni; 
+    temp.value=r.temp; 
+    spo2.value=r.spo2; 
+    bpm.value=r.bpm; 
+    modalTitle.innerText="Modifica Parametri"; 
+    editIndex=index;
+    btnSaveNext.style.display = "none"; // Nascondi Salva e Nuovo in modifica
+  }
+  else{ 
+    data.value=now.toISOString().split('T')[0]; 
+    ora.value=now.toTimeString().slice(0,5); 
+    modalTitle.innerText="Inserisci Parametri"; 
+    editIndex=-1; 
+    btnSaveNext.style.display = "inline-block";
+    document.querySelectorAll("#modal input").forEach(i=>{ if(i.id!=="data" && i.id!=="ora") i.value=""; }); 
+  }
   modal.style.display="flex";
 }
 
 function closeModal(){ modal.style.display="none"; }
 
-function saveData(){
+function saveData(keepOpen=false){
   const r={ data:data.value, ora:ora.value, massima:massima.value, minima:minima.value, pulsazioni:pulsazioni.value, spo2:spo2.value, bpm:bpm.value, temp:temp.value };
   if(editIndex>=0) records[editIndex]=r; else records.push(r);
-  // Ordina nuovamente dopo inserimento
+  
   records.sort((a,b)=> new Date(b.data+" "+b.ora) - new Date(a.data+" "+a.ora));
-  renderTable(); ghPush(); closeModal();
+  renderTable(); 
+  ghPush(); 
+
+  if(keepOpen){
+    // Resetta i campi ma mantiene la data
+    document.querySelectorAll("#modal input").forEach(i=>{ 
+        if(i.id!=="data" && i.id!=="ora") i.value=""; 
+    });
+    // Aggiorna l'ora all'istante attuale per il nuovo record
+    ora.value = new Date().toTimeString().slice(0,5);
+    setStatus("Record salvato, inserisci il prossimo","blue");
+  } else {
+    closeModal();
+  }
 }
 
 function deleteRecord(i){ if(confirm("Eliminare questo record?")){ records.splice(i,1); renderTable(); ghPush(); } }
