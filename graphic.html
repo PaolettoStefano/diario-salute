@@ -96,6 +96,26 @@
                 labels: labels,
                 datasets: [
                     {
+                        label: 'Soglia Max (140)',
+                        data: new Array(dataToShow.length).fill(140),
+                        borderColor: 'rgba(255, 59, 48, 0.4)',
+                        borderWidth: 1,
+                        borderDash: [10, 5],
+                        pointRadius: 0,
+                        fill: false,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Soglia Min (90)',
+                        data: new Array(dataToShow.length).fill(90),
+                        borderColor: 'rgba(255, 149, 0, 0.4)',
+                        borderWidth: 1,
+                        borderDash: [10, 5],
+                        pointRadius: 0,
+                        fill: false,
+                        yAxisID: 'y'
+                    },
+                    {
                         label: 'Pressione Max',
                         data: dataToShow.map(r => r.massima),
                         borderColor: '#ff3b30', // Rosso Apple
@@ -129,9 +149,9 @@
                         borderColor: '#28cd41', // Verde Apple
                         backgroundColor: 'transparent',
                         borderWidth: 2,
-                        borderDash: [5, 5], // Linea tratteggiata per distinguerla
+                        borderDash: [5, 5], 
                         tension: 0.3,
-                        yAxisID: 'y1' // Usa asse destro
+                        yAxisID: 'y1' 
                     }
                 ]
             },
@@ -140,7 +160,17 @@
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    legend: { position: 'top', labels: { usePointStyle: true, padding: 20 } }
+                    legend: { 
+                        position: 'top', 
+                        labels: { 
+                            usePointStyle: true, 
+                            padding: 20,
+                            // Filtra le soglie dalla legenda per non affollarla, opzionale
+                            filter: function(item) {
+                                return !item.text.includes('Soglia');
+                            }
+                        } 
+                    }
                 },
                 scales: {
                     y: { 
@@ -155,7 +185,7 @@
                         display: true,
                         position: 'right',
                         title: { display: true, text: 'Temperatura (°C)' },
-                        grid: { drawOnChartArea: false }, // Evita sovrapposizione griglie
+                        grid: { drawOnChartArea: false },
                         suggestedMin: 35,
                         suggestedMax: 40
                     },
