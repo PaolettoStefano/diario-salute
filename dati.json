@@ -2,12 +2,9 @@
   {
     "data": "2026-04-16",
     "ora": "12:55",
-    "massima": "131",
-    "minima": "84",
-    "pulsazioni": "",
-    "spo2": "68",
-    "bpm": "",
-    "temp": ""
+    "massima": 131,
+    "minima": 84,
+    "pulsazioni": 68
   },
   {
     "data": "2026-04-16",
