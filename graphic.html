@@ -87,7 +87,6 @@
 
         const labels = dataToShow.map(r => r.data + " " + r.ora);
 
-        // evidenzia punti fuori soglia
         const maxValues = dataToShow.map(r => r.massima);
         const minValues = dataToShow.map(r => r.minima);
 
@@ -137,23 +136,6 @@
                         tension: 0.3,
                         pointBackgroundColor: minPointColors,
                         pointRadius: minPointRadius
-                    },
-                    {
-                        label: 'BPM',
-                        data: dataToShow.map(r => r.bpm),
-                        borderColor: '#007aff',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.3
-                    },
-                    {
-                        label: 'Temp (°C)',
-                        data: dataToShow.map(r => r.temp),
-                        borderColor: '#28cd41',
-                        borderWidth: 2,
-                        borderDash: [5, 5],
-                        tension: 0.3,
-                        yAxisID: 'y1'
                     }
                 ]
             },
@@ -162,10 +144,6 @@
                 maintainAspectRatio: false,
                 scales: {
                     y: { beginAtZero: false },
-                    y1: {
-                        position: 'right',
-                        grid: { drawOnChartArea: false }
-                    },
                     x: { display: false }
                 }
             }
