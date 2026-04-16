@@ -3,132 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grafico Parametri Vitali - Glass Edition</title>
+    <title>Analisi Clinica - Glass Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.75);
-            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-bg: rgba(255, 255, 255, 0.8);
             --apple-blue: #007aff;
             --apple-red: #ff3b30;
             --apple-orange: #ff9500;
-            --apple-green: #34c759;
         }
 
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            font-family: -apple-system, system-ui, sans-serif; 
             margin: 0; 
             background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%); 
             min-height: 100vh;
-            color: #1d1d1f; 
         }
 
         header { 
-            background: rgba(29, 29, 31, 0.85); 
+            background: rgba(29, 29, 31, 0.9); 
             backdrop-filter: blur(15px);
-            color: white; 
-            padding: 20px; 
-            text-align: center; 
-            font-size: 24px; 
-            font-weight: 600; 
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            color: white; padding: 20px; text-align: center; font-size: 22px; font-weight: 600;
         }
 
-        .back-btn { 
-            position: absolute; 
-            left: 20px; 
-            top: 50%;
-            transform: translateY(-50%);
-            color: white; 
-            text-decoration: none; 
-            font-size: 14px; 
-            background: rgba(255,255,255,0.15); 
-            padding: 8px 15px; 
-            border-radius: 12px; 
-            backdrop-filter: blur(5px);
-            border: 1px solid var(--glass-border);
-        }
+        .back-btn { position: absolute; left: 20px; color: white; text-decoration: none; font-size: 14px; background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 12px; }
 
-        .container { 
-            padding: 20px; 
-            max-width: 1200px; 
-            margin: auto; 
-        }
-
-        #status { 
-            margin: 15px 0; 
-            font-size: 14px; 
-            text-align: center; 
-            font-weight: 500;
-        }
+        .container { padding: 20px; max-width: 1100px; margin: auto; }
 
         .card { 
             background: var(--glass-bg); 
             backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            padding: 25px; 
-            border-radius: 28px; 
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1); 
-            margin-bottom: 30px; 
+            padding: 25px; border-radius: 28px; border: 1px solid rgba(255,255,255,0.4);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1); 
+            margin-top: 20px;
         }
 
-        .controls { 
-            display: flex; 
-            justify-content: center; 
-            gap: 12px; 
-            margin-bottom: 25px; 
-        }
-
+        .controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        
         button { 
-            padding: 10px 18px; 
-            border-radius: 12px; 
-            border: 1px solid var(--glass-border); 
-            cursor: pointer; 
-            font-weight: 600; 
-            background: white;
-            color: var(--apple-blue);
-            transition: 0.3s;
+            padding: 10px 15px; border-radius: 12px; border: 1px solid #ddd; 
+            cursor: pointer; background: white; font-weight: 600; color: var(--apple-blue);
         }
 
-        button:hover { background: var(--apple-blue); color: white; }
+        button.active { background: var(--apple-blue); color: white; border-color: var(--apple-blue); }
 
-        .legend-alert {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 15px;
-        }
+        #status { text-align: center; font-size: 14px; margin-bottom: 10px; color: #666; }
     </style>
 </head>
 <body>
 
 <header>
-    <a href="javascript:history.back()" class="back-btn">← Home</a>
-    Monitoraggio Clinico
+    <a href="index.html" class="back-btn">← Lista</a>
+    Analisi Parametri
 </header>
 
 <div class="container">
-    <div id="status">Sincronizzazione in corso...</div>
+    <div id="status">Caricamento dati...</div>
 
     <div class="controls">
-        <button onclick="updateChart('all')">Storico Completo</button>
-        <button onclick="updateChart(30)">Ultimi 30 Giorni</button>
-        <button onclick="updateChart(7)">Settimana</button>
-    </div>
-
-    <div class="legend-alert">
-        <span style="color: var(--apple-red)">● Limite Sistolica: 140 mmHg</span>
-        <span style="color: var(--apple-orange)">● Limite Diastolica: 90 mmHg</span>
+        <button id="btn-all" onclick="updateChart('all')" class="active">Tutti</button>
+        <button id="btn-30" onclick="updateChart(30)">30 Giorni</button>
+        <button id="btn-7" onclick="updateChart(7)">7 Giorni</button>
     </div>
 
     <div class="card">
-        <div style="height: 550px;">
+        <div style="position: relative; height:60vh; width:100%">
             <canvas id="healthChart"></canvas>
         </div>
     </div>
@@ -140,23 +79,39 @@
     const config = JSON.parse(localStorage.getItem('gh_health_config'));
 
     async function fetchData() {
-        if (!config) return;
+        if (!config) {
+            document.getElementById('status').innerText = "Errore: Configura GitHub nella home";
+            return;
+        }
+
         const url = `https://api.github.com/repos/${config.repo}/contents/dati.json`;
         try {
             const res = await fetch(url, { headers: { Authorization: `token ${config.token}` } });
             if (res.ok) {
                 const data = await res.json();
                 records = JSON.parse(atob(data.content));
+                
+                // Ordina per data e ora crescente
                 records.sort((a, b) => new Date(a.data + " " + a.ora) - new Date(b.data + " " + b.ora));
-                document.getElementById('status').innerText = "Dati Clinici Aggiornati";
+                
+                document.getElementById('status').innerText = `Trovate ${records.length} misurazioni`;
                 updateChart('all');
+            } else {
+                document.getElementById('status').innerText = "Errore nel caricamento dei dati";
             }
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            document.getElementById('status').innerText = "Errore di connessione";
+        }
     }
 
     function updateChart(filter) {
+        // Gestione bottoni attivi
+        document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+        if(filter === 'all') document.getElementById('btn-all').classList.add('active');
+        else document.getElementById('btn-' + filter).classList.add('active');
+
         const ctx = document.getElementById('healthChart').getContext('2d');
-        let dataToShow = records;
+        let dataToShow = [...records];
 
         if (filter !== 'all') {
             const cutoff = new Date();
@@ -164,11 +119,21 @@
             dataToShow = records.filter(r => new Date(r.data) >= cutoff);
         }
 
+        if (dataToShow.length === 0) {
+            document.getElementById('status').innerText = "Nessun dato nel periodo selezionato";
+            if(healthChart) healthChart.destroy();
+            return;
+        }
+
         const labels = dataToShow.map(r => {
             const d = new Date(r.data);
             return d.toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit'}) + " " + r.ora;
         });
-        
+
+        const sysData = dataToShow.map(r => parseInt(r.massima));
+        const diaData = dataToShow.map(r => parseInt(r.minima));
+        const bpmData = dataToShow.map(r => parseInt(r.pulsazioni || r.bpm || 0));
+
         if (healthChart) healthChart.destroy();
 
         healthChart = new Chart(ctx, {
@@ -178,33 +143,29 @@
                 datasets: [
                     {
                         label: 'Sistolica (MAX)',
-                        data: dataToShow.map(r => r.massima),
+                        data: sysData,
                         borderColor: '#ff3b30',
                         backgroundColor: 'rgba(255, 59, 48, 0.1)',
-                        borderWidth: 4,
+                        borderWidth: 3,
                         tension: 0.3,
-                        pointRadius: dataToShow.map(r => r.massima >= 140 ? 8 : 4),
-                        pointBackgroundColor: dataToShow.map(r => r.massima >= 140 ? '#ff3b30' : 'white'),
-                        pointBorderWidth: 2,
-                        zIndex: 10
+                        pointRadius: sysData.map(v => v >= 140 ? 7 : 4),
+                        pointBackgroundColor: sysData.map(v => v >= 140 ? '#ff3b30' : 'white')
                     },
                     {
                         label: 'Diastolica (MIN)',
-                        data: dataToShow.map(r => r.minima),
+                        data: diaData,
                         borderColor: '#ff9500',
-                        borderWidth: 4,
+                        borderWidth: 3,
                         tension: 0.3,
-                        pointRadius: dataToShow.map(r => r.minima >= 90 ? 8 : 4),
-                        pointBackgroundColor: dataToShow.map(r => r.minima >= 90 ? '#ff9500' : 'white'),
-                        pointBorderWidth: 2,
-                        zIndex: 10
+                        pointRadius: diaData.map(v => v >= 90 ? 7 : 4),
+                        pointBackgroundColor: diaData.map(v => v >= 90 ? '#ff9500' : 'white')
                     },
                     {
-                        label: 'Battiti (BPM)',
-                        data: dataToShow.map(r => r.pulsazioni),
+                        label: 'BPM',
+                        data: bpmData,
                         borderColor: '#007aff',
                         borderWidth: 2,
-                        borderDash: [3, 3],
+                        borderDash: [5, 5],
                         pointRadius: 2,
                         fill: false
                     }
@@ -213,76 +174,45 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                layout: { padding: { top: 20 } },
                 plugins: {
-                    legend: { position: 'bottom' },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        padding: 15,
-                        bodyFont: { size: 14 }
-                    }
+                    legend: { position: 'top' },
+                    tooltip: { mode: 'index', intersect: false }
                 },
                 scales: {
-                    y: { 
-                        min: 40,
-                        max: 200,
+                    y: {
+                        beginAtZero: false,
+                        suggestedMin: 50,
+                        suggestedMax: 160,
                         grid: {
                             color: (context) => {
-                                if (context.tick.value === 140 || context.tick.value === 90) return 'rgba(0,0,0,0.3)';
+                                if (context.tick.value === 140 || context.tick.value === 90) return 'rgba(255, 0, 0, 0.4)';
                                 return 'rgba(0,0,0,0.05)';
-                            },
-                            lineWidth: (context) => (context.tick.value === 140 || context.tick.value === 90 ? 2 : 1)
+                            }
                         },
                         ticks: {
                             callback: function(value) {
-                                if (value === 140) return '140 (LIMITE MAX)';
-                                if (value === 90) return '90 (LIMITE MIN)';
+                                if (value === 140) return '140 - LIMITE MAX';
+                                if (value === 90) return '90 - LIMITE MIN';
                                 return value;
-                            },
-                            font: (context) => {
-                                if (context.tick.value === 140 || context.tick.value === 90) return { weight: 'bold' };
-                            },
-                            color: (context) => {
-                                if (context.tick.value === 140) return '#ff3b30';
-                                if (context.tick.value === 90) return '#ff9500';
                             }
                         }
                     },
                     x: {
-                        ticks: { maxRotation: 45, minRotation: 45, font: { size: 11 }, autoSkip: false }
+                        ticks: { autoSkip: false, maxRotation: 45, minRotation: 45, font: { size: 10 } }
                     }
                 }
             },
+            // Plugin per colorare le fasce di pericolo
             plugins: [{
-                id: 'limitLines',
                 beforeDraw: (chart) => {
                     const {ctx, chartArea: {left, right, top, bottom}, scales: {y}} = chart;
-                    
-                    // Area allerta Sistolica (Sopra 140)
+                    ctx.save();
+                    // Fascia Sistolica Alta
                     ctx.fillStyle = 'rgba(255, 59, 48, 0.05)';
                     ctx.fillRect(left, top, right - left, y.getPixelForValue(140) - top);
-                    
-                    // Linea 140
-                    ctx.save();
-                    ctx.strokeStyle = '#ff3b30';
-                    ctx.lineWidth = 2;
-                    ctx.setLineDash([10, 5]);
-                    ctx.beginPath();
-                    ctx.moveTo(left, y.getPixelForValue(140));
-                    ctx.lineTo(right, y.getPixelForValue(140));
-                    ctx.stroke();
-                    ctx.restore();
-
-                    // Linea 90
-                    ctx.save();
-                    ctx.strokeStyle = '#ff9500';
-                    ctx.lineWidth = 2;
-                    ctx.setLineDash([10, 5]);
-                    ctx.beginPath();
-                    ctx.moveTo(left, y.getPixelForValue(90));
-                    ctx.lineTo(right, y.getPixelForValue(90));
-                    ctx.stroke();
+                    // Fascia Diastolica Alta
+                    ctx.fillStyle = 'rgba(255, 149, 0, 0.05)';
+                    ctx.fillRect(left, y.getPixelForValue(140), right - left, y.getPixelForValue(90) - y.getPixelForValue(140));
                     ctx.restore();
                 }
             }]
