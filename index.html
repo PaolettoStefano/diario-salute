@@ -1,187 +1,287 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Monitoraggio Parametri Vitali</title>
-<style>
-body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; margin:0; background:#f4f6f9; }
-header { background:#2c3e50; color:white; padding:15px; text-align:center; font-size:20px; font-weight:bold; }
-.container { padding:15px; }
-button { padding:10px 15px; border-radius:8px; border:none; cursor:pointer; font-weight:600; margin-right:5px; margin-bottom:10px; }
-.primary { background:#3498db; color:white; }
-.success { background:#27ae60; color:white; }
-.export { background:#8e44ad; color:white; }
-.warning { background:#e67e22; color:white; }
-.danger { background:#e74c3c; color:white; }
-.table-container { overflow-x:auto; margin-top:15px; }
-table { width:100%; border-collapse:collapse; background:white; border-radius:10px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.05);}
-th, td { padding:8px; text-align:center; font-size:14px; }
-th { background:#34495e; color:white; }
-tr:nth-child(even) { background:#f2f2f2; }
-.month-header { background:#dfe6e9; font-weight:bold; text-align:left; padding:10px; font-size:14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-radius:8px; margin-top:10px; }
-.month-header:hover { background:#d0d7de; }
-.modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); justify-content:center; align-items:center; z-index:9999; }
-.modal-content { background:white; padding:25px; border-radius:16px; width:95%; max-width:500px; box-shadow:0 4px 12px rgba(0,0,0,0.2);}
-.modal-content h3 { margin-top:0; margin-bottom:15px; font-size:18px; text-align:center; color:#2c3e50;}
-input { width:100%; padding:10px; margin:5px 0 12px 0; border-radius:8px; border:1px solid #ccc; font-size:14px; background:#f9f9f9; transition:0.2s; }
-input:focus { border-color:#3498db; box-shadow:0 0 5px rgba(52,152,219,0.3); outline:none; }
-.flex-row { display:flex; gap:10px; flex-wrap:wrap; }
-.flex-row input { flex:1; min-width:100px; }
-.actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:10px; margin-top:10px; }
-#status { margin-bottom:10px; font-size:14px; }
-.color-red { color:#e74c3c; font-weight:bold; }
-.color-orange { color:#e67e22; font-weight:bold; }
-.color-blue { color:#3498db; font-weight:bold; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoraggio Salute - Apple Glass</title>
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --apple-blue: #007aff;
+            --apple-red: #ff3b30;
+            --apple-green: #34c759;
+            --text-main: #1d1d1f;
+        }
 
-.collapsible { background:#ecf0f1; color:#2c3e50; cursor:pointer; padding:10px 15px; width:100%; border:none; text-align:left; font-size:16px; border-radius:8px; margin-bottom:10px; }
-.active, .collapsible:hover { background:#d0d7de; }
-.content { padding:0 15px; max-height:0; overflow:hidden; transition:max-height 0.3s ease; background:#f9f9f9; border-radius:8px; }
-</style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            margin: 0; 
+            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%); 
+            min-height: 100vh;
+            color: var(--text-main);
+            font-size: 18px; /* Caratteri più grandi */
+        }
+
+        header { 
+            background: rgba(29, 29, 31, 0.8); 
+            backdrop-filter: blur(15px);
+            color: white; 
+            padding: 25px; 
+            text-align: center; 
+            font-size: 26px; 
+            font-weight: 600; 
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .container { padding: 30px; max-width: 1000px; margin: auto; }
+
+        #status { 
+            margin-bottom: 20px; 
+            font-size: 16px; 
+            text-align: center; 
+            padding: 10px;
+            border-radius: 12px;
+            background: var(--glass-bg);
+        }
+
+        /* Pulsanti stile Apple */
+        .actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-bottom: 30px; }
+        
+        button { 
+            padding: 12px 24px; 
+            border-radius: 16px; 
+            border: 1px solid var(--glass-border); 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(5px);
+        }
+
+        .primary { background: var(--apple-blue); color: white; border: none; }
+        .success { background: var(--apple-green); color: white; border: none; }
+        .warning { background: rgba(255, 149, 0, 0.2); color: #c67c00; }
+        .danger { background: rgba(255, 59, 48, 0.1); color: var(--apple-red); }
+        .export { background: rgba(255, 255, 255, 0.5); color: var(--text-main); }
+
+        button:hover { transform: scale(1.05); filter: brightness(1.1); }
+
+        /* Tabella Glassmorphism */
+        .table-container { 
+            background: var(--glass-bg); 
+            backdrop-filter: blur(10px); 
+            border-radius: 24px; 
+            padding: 20px; 
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+            overflow-x: auto;
+        }
+
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { padding: 18px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        th { font-weight: 600; color: #6e6e73; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        td { font-size: 18px; font-weight: 500; }
+
+        /* Modale Apple Style */
+        .modal { 
+            display: none; position: fixed; inset: 0; 
+            background: rgba(0,0,0,0.3); backdrop-filter: blur(8px);
+            justify-content: center; align-items: center; z-index: 2000; 
+        }
+        .modal-content { 
+            background: rgba(255, 255, 255, 0.9); 
+            padding: 40px; border-radius: 30px; 
+            width: 90%; max-width: 500px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        input { 
+            width: 100%; padding: 15px; margin: 10px 0 20px 0; 
+            border-radius: 12px; border: 1px solid #ddd; 
+            font-size: 18px; background: white; box-sizing: border-box;
+        }
+
+        .flex-row { display: flex; gap: 20px; }
+        .flex-row div { flex: 1; }
+
+        /* Configurazione nascosta inizialmente */
+        .collapsible { background: var(--glass-bg); margin-bottom: 15px; width: 100%; text-align: left; }
+        .content { 
+            padding: 0 15px; max-height: 0; overflow: hidden; 
+            transition: max-height 0.3s ease; 
+        }
+    </style>
 </head>
 <body>
 
-<header>Monitoraggio Parametri Vitali</header>
+<header>Salute Personale</header>
 
 <div class="container">
-  <div id="status">Stato: <span id="statusText">Inizializzazione...</span></div>
+    <div id="status">Stato: <span id="statusText">Inizializzazione...</span></div>
 
-  <button type="button" class="collapsible">⚙️ Configurazione GitHub</button>
-  <div class="content">
-    <input type="password" id="ghToken" placeholder="Personal Access Token">
-    <input type="text" id="ghRepo" placeholder="utente/nome-repo">
-    <button class="primary" onclick="saveSetup()">Connetti</button>
-  </div>
-
-  <div class="actions">
-    <button class="primary" onclick="openModal()">+ Inserisci</button>
-    <button class="primary" onclick="window.location.href='graphic.html'">📊 Grafico</button>
-    <button class="success" onclick="ghFetch()">🔄 Aggiorna</button>
-    <button class="export" onclick="exportCSV()">Esporta</button>
-  </div>
-
-  <div id="tableContainer" class="table-container"></div>
-</div>
-
-<div class="modal" id="modal">
-  <div class="modal-content">
-    <h3 id="modalTitle">Inserisci Parametri</h3>
-
-    <label>Data</label><input type="date" id="data">
-    <label>Ora</label><input type="time" id="ora">
-
-    <div class="flex-row">
-      <div><label>Massima</label><input type="number" id="massima"></div>
-      <div><label>Minima</label><input type="number" id="minima"></div>
-    </div>
-
-    <div class="flex-row">
-      <div><label>Pulsazioni</label><input type="number" id="pulsazioni"></div>
-      <div><label>SP02</label><input type="number" id="spo2"></div>
+    <button type="button" class="collapsible" onclick="toggleConfig()">⚙️ Impostazioni GitHub</button>
+    <div id="configPanel" class="content">
+        <input type="password" id="ghToken" placeholder="Personal Access Token">
+        <input type="text" id="ghRepo" placeholder="utente/nome-repo">
+        <button class="primary" style="width:100%" onclick="saveSetup()">Connetti Account</button>
     </div>
 
     <div class="actions">
-      <button onclick="closeModal()">Annulla</button>
-      <button class="success" onclick="saveData()">Salva</button>
+        <button class="primary" onclick="openModal()">+ Nuova Misura</button>
+        <button class="success" onclick="window.location.href='graphic.html'">📊 Visualizza Grafico</button>
+        <button class="export" onclick="exportCSV()">Esporta dati</button>
+        <button class="export" onclick="ghFetch()">🔄 Sincronizza</button>
     </div>
-  </div>
+
+    <div id="tableContainer" class="table-container"></div>
+</div>
+
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0; font-size: 24px;">Nuova Misurazione</h3>
+
+        <div class="flex-row">
+            <div><label>Data</label><input type="date" id="data"></div>
+            <div><label>Ora</label><input type="time" id="ora"></div>
+        </div>
+
+        <div class="flex-row">
+            <div><label>Massima (Sist.)</label><input type="number" id="massima" placeholder="120"></div>
+            <div><label>Minima (Diast.)</label><input type="number" id="minima" placeholder="80"></div>
+        </div>
+
+        <label>Pulsazioni (BPM)</label>
+        <input type="number" id="pulsazioni" placeholder="70">
+
+        <div class="actions" style="justify-content: flex-end; margin-bottom:0; margin-top:20px;">
+            <button onclick="closeModal()">Annulla</button>
+            <button class="primary" onclick="saveData()">Salva Misura</button>
+        </div>
+    </div>
 </div>
 
 <script>
 let records=[], editIndex=-1, config=JSON.parse(localStorage.getItem('gh_health_config'))||null, fileSha="";
 
+function toggleConfig() {
+    const content = document.getElementById("configPanel");
+    content.style.maxHeight = content.style.maxHeight ? null : content.scrollHeight + "px";
+}
+
 function saveSetup(){
-  const token=ghToken.value.trim();
-  const repo=ghRepo.value.trim();
-  if(token && repo){ localStorage.setItem('gh_health_config', JSON.stringify({token,repo})); location.reload(); }
+    const token=ghToken.value.trim();
+    const repo=ghRepo.value.trim();
+    if(token && repo){ 
+        localStorage.setItem('gh_health_config', JSON.stringify({token,repo})); 
+        location.reload(); 
+    }
 }
 
 function setStatus(msg,color='black'){ statusText.innerText=msg; statusText.style.color=color; }
 
 async function ghFetch(){
-  if(!config) return;
-  const url=`https://api.github.com/repos/${config.repo}/contents/dati.json`;
-  try{
-    const res=await fetch(url,{ headers:{ Authorization:`token ${config.token}`} });
-    if(res.ok){
-      const data=await res.json();
-      fileSha=data.sha;
-      records=JSON.parse(atob(data.content));
-      records.sort((a,b)=> new Date(b.data+" "+b.ora) - new Date(a.data+" "+a.ora));
-      renderTable();
-      setStatus("Dati caricati","green");
-    }
-  } catch(e){ setStatus("Errore","red"); }
+    if(!config) { setStatus("Configurazione mancante", "red"); return; }
+    const url=`https://api.github.com/repos/${config.repo}/contents/dati.json`;
+    try{
+        const res=await fetch(url,{ headers:{ Authorization:`token ${config.token}`} });
+        if(res.ok){
+            const data=await res.json();
+            fileSha=data.sha;
+            records=JSON.parse(atob(data.content));
+            records.sort((a,b)=> new Date(b.data+" "+b.ora) - new Date(a.data+" "+a.ora));
+            renderTable();
+            setStatus("Dati sincronizzati","var(--apple-green)");
+        }
+    } catch(e){ setStatus("Errore connessione","red"); }
 }
 
 async function ghPush(){
-  if(!config) return;
-  const url=`https://api.github.com/repos/${config.repo}/contents/dati.json`;
-  const body={ message:"Update", content:btoa(JSON.stringify(records,null,2)), sha:fileSha };
-  await fetch(url,{ method:"PUT", headers:{ Authorization:`token ${config.token}`, "Content-Type":"application/json"}, body:JSON.stringify(body) });
+    if(!config) return;
+    setStatus("Salvataggio su cloud...","var(--apple-blue)");
+    const url=`https://api.github.com/repos/${config.repo}/contents/dati.json`;
+    const body={ message:"Update health data", content:btoa(JSON.stringify(records,null,2)), sha:fileSha };
+    const res = await fetch(url,{ 
+        method:"PUT", 
+        headers:{ Authorization:`token ${config.token}`, "Content-Type":"application/json"}, 
+        body:JSON.stringify(body) 
+    });
+    if(res.ok) {
+        const data = await res.json();
+        fileSha = data.content.sha;
+        setStatus("Dati salvati online","var(--apple-green)");
+    }
 }
 
 function openModal(index=-1){
-  if(index>=0){
-    const r=records[index];
-    data.value=r.data; ora.value=r.ora;
-    massima.value=r.massima; minima.value=r.minima;
-    pulsazioni.value=r.pulsazioni; spo2.value=r.spo2;
-    editIndex=index;
-  } else{
-    document.querySelectorAll("#modal input").forEach(i=>i.value="");
-    editIndex=-1;
-  }
-  modal.style.display="flex";
+    if(index>=0){
+        const r=records[index];
+        data.value=r.data; ora.value=r.ora;
+        massima.value=r.massima; minima.value=r.minima;
+        pulsazioni.value=r.pulsazioni || r.bpm;
+        editIndex=index;
+    } else {
+        const oraAttuale = new Date();
+        data.value = oraAttuale.toISOString().split('T')[0];
+        ora.value = oraAttuale.toTimeString().substring(0,5);
+        massima.value=""; minima.value=""; pulsazioni.value="";
+        editIndex=-1;
+    }
+    modal.style.display="flex";
 }
 
 function closeModal(){ modal.style.display="none"; }
 
 function saveData(){
-  const r={
-    data:data.value,
-    ora:ora.value,
-    massima:massima.value,
-    minima:minima.value,
-    pulsazioni:pulsazioni.value,
-    spo2:spo2.value
-  };
-  if(editIndex>=0) records[editIndex]=r; else records.push(r);
-  renderTable(); ghPush(); closeModal();
+    const r={
+        data:data.value,
+        ora:ora.value,
+        massima:parseInt(massima.value),
+        minima:parseInt(minima.value),
+        pulsazioni:parseInt(pulsazioni.value)
+    };
+    if(editIndex>=0) records[editIndex]=r; else records.unshift(r);
+    renderTable(); ghPush(); closeModal();
 }
 
-function deleteRecord(i){ if(confirm("Eliminare?")){ records.splice(i,1); renderTable(); ghPush(); } }
+function deleteRecord(i){ if(confirm("Eliminare definitivamente questa misura?")){ records.splice(i,1); renderTable(); ghPush(); } }
 
 function renderTable(){
-  if(records.length===0){ tableContainer.innerHTML="<p>Nessun dato</p>"; return; }
-  let html=`<table><tr>
-    <th>Data</th><th>Ora</th><th>Max</th><th>Min</th><th>Puls</th><th>SP02</th><th>Azioni</th>
-  </tr>`;
-  records.forEach((r,i)=>{
-    html+=`<tr>
-      <td>${r.data}</td><td>${r.ora}</td>
-      <td>${r.massima}</td><td>${r.minima}</td>
-      <td>${r.pulsazioni}</td><td>${r.spo2}</td>
-      <td>
-        <button class="warning" onclick="openModal(${i})">✏️</button>
-        <button class="danger" onclick="deleteRecord(${i})">🗑️</button>
-      </td>
+    if(records.length===0){ tableContainer.innerHTML="<p style='text-align:center'>Nessuna misurazione presente.</p>"; return; }
+    let html=`<table><tr>
+        <th>Data e Ora</th><th>Pressione</th><th>BPM</th><th>Azioni</th>
     </tr>`;
-  });
-  html+="</table>";
-  tableContainer.innerHTML=html;
+    records.forEach((r,i)=>{
+        const isHigh = r.massima > 140 || r.minima > 90;
+        html+=`<tr>
+            <td><div style="font-weight:600">${r.data}</div><div style="font-size:14px; color:#888">${r.ora}</div></td>
+            <td style="color: ${isHigh ? 'var(--apple-red)' : 'inherit'}">
+                ${r.massima} / ${r.minima}
+            </td>
+            <td>${r.pulsazioni || r.bpm || '-'}</td>
+            <td>
+                <button class="warning" onclick="openModal(${i})" style="padding: 8px 12px">✏️</button>
+                <button class="danger" onclick="deleteRecord(${i})" style="padding: 8px 12px">🗑️</button>
+            </td>
+        </tr>`;
+    });
+    html+="</table>";
+    tableContainer.innerHTML=html;
 }
 
 function exportCSV(){
-  let csv="Data,Ora,Massima,Minima,Pulsazioni,SP02\n";
-  records.forEach(r=>{
-    csv+=`${r.data},${r.ora},${r.massima},${r.minima},${r.pulsazioni},${r.spo2}\n`;
-  });
-  const blob=new Blob([csv]);
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="parametri.csv";
-  a.click();
+    let csv="Data,Ora,Massima,Minima,Pulsazioni\n";
+    records.forEach(r=>{
+        csv+=`${r.data},${r.ora},${r.massima},${r.minima},${r.pulsazioni}\n`;
+    });
+    const blob=new Blob([csv], {type: 'text/csv'});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="misure_salute.csv";
+    a.click();
 }
 
 if(config) ghFetch();
