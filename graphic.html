@@ -144,7 +144,15 @@
                 maintainAspectRatio: false,
                 scales: {
                     y: { beginAtZero: false },
-                    x: { display: false }
+                    x: { 
+                        display: true,
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45,
+                            autoSkip: true,
+                            maxTicksLimit: 10
+                        }
+                    }
                 }
             }
         });
