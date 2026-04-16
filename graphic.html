@@ -7,8 +7,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.3);
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.4);
             --apple-blue: #007aff;
             --apple-red: #ff3b30;
             --apple-orange: #ff9500;
@@ -18,18 +18,18 @@
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
             margin: 0; 
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
+            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%); 
             min-height: 100vh;
             color: #1d1d1f; 
         }
 
         header { 
-            background: rgba(44, 62, 80, 0.8); 
-            backdrop-filter: blur(10px);
+            background: rgba(29, 29, 31, 0.85); 
+            backdrop-filter: blur(15px);
             color: white; 
             padding: 20px; 
             text-align: center; 
-            font-size: 22px; 
+            font-size: 24px; 
             font-weight: 600; 
             position: sticky;
             top: 0;
@@ -50,22 +50,30 @@
             border-radius: 12px; 
             backdrop-filter: blur(5px);
             border: 1px solid var(--glass-border);
-            transition: 0.3s;
         }
-
-        .back-btn:hover { background: rgba(255,255,255,0.3); }
 
         .container { 
             padding: 20px; 
-            max-width: 1100px; 
+            max-width: 1200px; 
             margin: auto; 
         }
 
         #status { 
-            margin: 10px 0; 
+            margin: 15px 0; 
             font-size: 14px; 
             text-align: center; 
             font-weight: 500;
+        }
+
+        .card { 
+            background: var(--glass-bg); 
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 25px; 
+            border-radius: 28px; 
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1); 
+            margin-bottom: 30px; 
         }
 
         .controls { 
@@ -73,73 +81,56 @@
             justify-content: center; 
             gap: 12px; 
             margin-bottom: 25px; 
-            flex-wrap: wrap; 
         }
 
         button { 
-            padding: 10px 20px; 
-            border-radius: 14px; 
+            padding: 10px 18px; 
+            border-radius: 12px; 
             border: 1px solid var(--glass-border); 
             cursor: pointer; 
             font-weight: 600; 
-            background: var(--glass-bg); 
-            color: var(--apple-blue); 
-            backdrop-filter: blur(5px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            background: white;
+            color: var(--apple-blue);
+            transition: 0.3s;
         }
 
-        button:hover { 
-            transform: translateY(-2px);
-            background: var(--apple-blue);
-            color: white;
-            box-shadow: 0 8px 15px rgba(0, 122, 255, 0.3);
-        }
+        button:hover { background: var(--apple-blue); color: white; }
 
-        .card { 
-            background: var(--glass-bg); 
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            padding: 25px; 
-            border-radius: 24px; 
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1); 
-            margin-bottom: 30px; 
+        .legend-alert {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 15px;
         }
-
-        .legend-info {
-            text-align: center;
-            font-size: 12px;
-            color: #666;
-            margin-top: -10px;
-            margin-bottom: 20px;
-        }
-
-        canvas { width: 100% !important; height: 500px !important; }
     </style>
 </head>
 <body>
 
 <header>
     <a href="javascript:history.back()" class="back-btn">← Home</a>
-    Analisi Salute
+    Monitoraggio Clinico
 </header>
 
 <div class="container">
-    <div id="status">Sincronizzazione...</div>
+    <div id="status">Sincronizzazione in corso...</div>
 
     <div class="controls">
-        <button onclick="updateChart('all')">Tutto lo storico</button>
-        <button onclick="updateChart(30)">Ultimi 30 giorni</button>
-        <button onclick="updateChart(7)">Ultima settimana</button>
+        <button onclick="updateChart('all')">Storico Completo</button>
+        <button onclick="updateChart(30)">Ultimi 30 Giorni</button>
+        <button onclick="updateChart(7)">Settimana</button>
     </div>
 
-    <div class="legend-info">
-        Nota: I punti più grandi indicano valori fuori soglia (Max > 140, Min > 90)
+    <div class="legend-alert">
+        <span style="color: var(--apple-red)">● Limite Sistolica: 140 mmHg</span>
+        <span style="color: var(--apple-orange)">● Limite Diastolica: 90 mmHg</span>
     </div>
 
     <div class="card">
-        <canvas id="healthChart"></canvas>
+        <div style="height: 550px;">
+            <canvas id="healthChart"></canvas>
+        </div>
     </div>
 </div>
 
@@ -148,36 +139,19 @@
     let healthChart = null;
     const config = JSON.parse(localStorage.getItem('gh_health_config'));
 
-    function setStatus(msg, color = '#1d1d1f') {
-        const statusEl = document.getElementById('status');
-        statusEl.innerText = msg;
-        statusEl.style.color = color;
-    }
-
     async function fetchData() {
-        if (!config) {
-            setStatus("Configurazione mancante!", "#ff3b30");
-            return;
-        }
-
-        setStatus("Recupero dati in corso...", "#007aff");
+        if (!config) return;
         const url = `https://api.github.com/repos/${config.repo}/contents/dati.json`;
-        
         try {
             const res = await fetch(url, { headers: { Authorization: `token ${config.token}` } });
             if (res.ok) {
                 const data = await res.json();
                 records = JSON.parse(atob(data.content));
-                // Ordine cronologico per il grafico (X da sinistra a destra)
                 records.sort((a, b) => new Date(a.data + " " + a.ora) - new Date(b.data + " " + b.ora));
-                setStatus("Dati aggiornati", "#34c759");
+                document.getElementById('status').innerText = "Dati Clinici Aggiornati";
                 updateChart('all');
-            } else {
-                setStatus("Errore di connessione GitHub", "#ff3b30");
             }
-        } catch (e) {
-            setStatus("Errore di rete", "#ff3b30");
-        }
+        } catch (e) { console.error(e); }
     }
 
     function updateChart(filter) {
@@ -190,7 +164,6 @@
             dataToShow = records.filter(r => new Date(r.data) >= cutoff);
         }
 
-        // Asse X: Tutte le date e ore formattate
         const labels = dataToShow.map(r => {
             const d = new Date(r.data);
             return d.toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit'}) + " " + r.ora;
@@ -198,127 +171,121 @@
         
         if (healthChart) healthChart.destroy();
 
-        // Configurazione stile punti dinamici (Evidenzia fuori soglia)
-        const pointStyleMax = dataToShow.map(r => r.massima > 140 ? 8 : 4);
-        const pointBorderMax = dataToShow.map(r => r.massima > 140 ? 3 : 1);
-        const pointStyleMin = dataToShow.map(r => r.minima > 90 ? 8 : 4);
-        const pointBorderMin = dataToShow.map(r => r.minima > 90 ? 3 : 1);
-
         healthChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Pressione Max',
+                        label: 'Sistolica (MAX)',
                         data: dataToShow.map(r => r.massima),
                         borderColor: '#ff3b30',
                         backgroundColor: 'rgba(255, 59, 48, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.4,
-                        pointRadius: pointStyleMax,
-                        pointHoverRadius: 10,
-                        pointBorderWidth: pointBorderMax,
-                        pointBackgroundColor: 'white',
-                        yAxisID: 'y'
+                        borderWidth: 4,
+                        tension: 0.3,
+                        pointRadius: dataToShow.map(r => r.massima >= 140 ? 8 : 4),
+                        pointBackgroundColor: dataToShow.map(r => r.massima >= 140 ? '#ff3b30' : 'white'),
+                        pointBorderWidth: 2,
+                        zIndex: 10
                     },
                     {
-                        label: 'Pressione Min',
+                        label: 'Diastolica (MIN)',
                         data: dataToShow.map(r => r.minima),
                         borderColor: '#ff9500',
-                        backgroundColor: 'transparent',
-                        borderWidth: 3,
-                        tension: 0.4,
-                        pointRadius: pointStyleMin,
-                        pointHoverRadius: 10,
-                        pointBorderWidth: pointBorderMin,
-                        pointBackgroundColor: 'white',
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'Soglia Sistolica (140)',
-                        data: new Array(dataToShow.length).fill(140),
-                        borderColor: 'rgba(255, 59, 48, 0.2)',
-                        borderWidth: 1,
-                        borderDash: [5, 5],
-                        pointRadius: 0,
-                        fill: false
-                    },
-                    {
-                        label: 'Soglia Diastolica (90)',
-                        data: new Array(dataToShow.length).fill(90),
-                        borderColor: 'rgba(255, 149, 0, 0.2)',
-                        borderWidth: 1,
-                        borderDash: [5, 5],
-                        pointRadius: 0,
-                        fill: false
+                        borderWidth: 4,
+                        tension: 0.3,
+                        pointRadius: dataToShow.map(r => r.minima >= 90 ? 8 : 4),
+                        pointBackgroundColor: dataToShow.map(r => r.minima >= 90 ? '#ff9500' : 'white'),
+                        pointBorderWidth: 2,
+                        zIndex: 10
                     },
                     {
                         label: 'Battiti (BPM)',
-                        data: dataToShow.map(r => r.bpm || r.pulsazioni),
+                        data: dataToShow.map(r => r.pulsazioni),
                         borderColor: '#007aff',
-                        backgroundColor: 'rgba(0, 122, 255, 0.05)',
                         borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 3,
-                        yAxisID: 'y'
+                        borderDash: [3, 3],
+                        pointRadius: 2,
+                        fill: false
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: { padding: { top: 20 } },
                 plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: { 
-                            usePointStyle: true, 
-                            font: { size: 12, weight: '600' },
-                            filter: (item) => !item.text.includes('Soglia')
-                        }
-                    },
+                    legend: { position: 'bottom' },
                     tooltip: {
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        titleColor: '#1d1d1f',
-                        bodyColor: '#1d1d1f',
-                        borderColor: '#ddd',
-                        borderWidth: 1,
-                        padding: 12,
-                        boxPadding: 5,
-                        usePointStyle: true,
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) label += ': ';
-                                label += context.parsed.y;
-                                if (context.parsed.y > 140 && context.dataset.label.includes('Max')) label += ' ⚠️ ALTA';
-                                if (context.parsed.y > 90 && context.dataset.label.includes('Min')) label += ' ⚠️ ALTA';
-                                return label;
-                            }
-                        }
+                        mode: 'index',
+                        intersect: false,
+                        padding: 15,
+                        bodyFont: { size: 14 }
                     }
                 },
                 scales: {
                     y: { 
-                        beginAtZero: false,
-                        grid: { color: 'rgba(0,0,0,0.05)' },
-                        title: { display: true, text: 'Valori (mmHg / BPM)', font: { weight: '600' } }
+                        min: 40,
+                        max: 200,
+                        grid: {
+                            color: (context) => {
+                                if (context.tick.value === 140 || context.tick.value === 90) return 'rgba(0,0,0,0.3)';
+                                return 'rgba(0,0,0,0.05)';
+                            },
+                            lineWidth: (context) => (context.tick.value === 140 || context.tick.value === 90 ? 2 : 1)
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                if (value === 140) return '140 (LIMITE MAX)';
+                                if (value === 90) return '90 (LIMITE MIN)';
+                                return value;
+                            },
+                            font: (context) => {
+                                if (context.tick.value === 140 || context.tick.value === 90) return { weight: 'bold' };
+                            },
+                            color: (context) => {
+                                if (context.tick.value === 140) return '#ff3b30';
+                                if (context.tick.value === 90) return '#ff9500';
+                            }
+                        }
                     },
                     x: {
-                        grid: { display: false },
-                        ticks: {
-                            maxRotation: 45,
-                            minRotation: 45,
-                            font: { size: 10 },
-                            autoSkip: false // Forza la visualizzazione di TUTTE le etichette
-                        }
+                        ticks: { maxRotation: 45, minRotation: 45, font: { size: 11 }, autoSkip: false }
                     }
-                },
-                animations: {
-                    tension: { duration: 1000, easing: 'linear' }
                 }
-            }
+            },
+            plugins: [{
+                id: 'limitLines',
+                beforeDraw: (chart) => {
+                    const {ctx, chartArea: {left, right, top, bottom}, scales: {y}} = chart;
+                    
+                    // Area allerta Sistolica (Sopra 140)
+                    ctx.fillStyle = 'rgba(255, 59, 48, 0.05)';
+                    ctx.fillRect(left, top, right - left, y.getPixelForValue(140) - top);
+                    
+                    // Linea 140
+                    ctx.save();
+                    ctx.strokeStyle = '#ff3b30';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([10, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(left, y.getPixelForValue(140));
+                    ctx.lineTo(right, y.getPixelForValue(140));
+                    ctx.stroke();
+                    ctx.restore();
+
+                    // Linea 90
+                    ctx.save();
+                    ctx.strokeStyle = '#ff9500';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([10, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(left, y.getPixelForValue(90));
+                    ctx.lineTo(right, y.getPixelForValue(90));
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }]
         });
     }
 
