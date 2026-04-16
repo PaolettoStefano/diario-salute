@@ -64,7 +64,6 @@
             if (res.ok) {
                 const data = await res.json();
                 records = JSON.parse(atob(data.content));
-                // Ordina cronologicamente
                 records.sort((a, b) => new Date(a.data + " " + a.ora) - new Date(b.data + " " + b.ora));
                 setStatus("Dati caricati correttamente", "green");
                 updateChart('all');
@@ -87,7 +86,17 @@
         }
 
         const labels = dataToShow.map(r => r.data + " " + r.ora);
-        
+
+        // evidenzia punti fuori soglia
+        const maxValues = dataToShow.map(r => r.massima);
+        const minValues = dataToShow.map(r => r.minima);
+
+        const maxPointColors = maxValues.map(v => v >= 140 ? '#ff0000' : '#ff3b30');
+        const minPointColors = minValues.map(v => v >= 90 ? '#ff8800' : '#ff9500');
+
+        const maxPointRadius = maxValues.map(v => v >= 140 ? 6 : 3);
+        const minPointRadius = minValues.map(v => v >= 90 ? 6 : 3);
+
         if (healthChart) healthChart.destroy();
 
         healthChart = new Chart(ctx, {
@@ -96,98 +105,66 @@
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Soglia Max (140)',
+                        label: 'Soglia Max',
                         data: new Array(dataToShow.length).fill(140),
-                        borderColor: 'rgba(255, 59, 48, 0.4)',
-                        borderWidth: 1,
-                        borderDash: [10, 5],
-                        pointRadius: 0,
-                        fill: false,
-                        yAxisID: 'y'
+                        borderColor: 'rgba(255,0,0,0.9)',
+                        borderWidth: 3,
+                        borderDash: [6, 4],
+                        pointRadius: 0
                     },
                     {
-                        label: 'Soglia Min (90)',
+                        label: 'Soglia Min',
                         data: new Array(dataToShow.length).fill(90),
-                        borderColor: 'rgba(255, 149, 0, 0.4)',
-                        borderWidth: 1,
-                        borderDash: [10, 5],
-                        pointRadius: 0,
-                        fill: false,
-                        yAxisID: 'y'
+                        borderColor: 'rgba(255,140,0,0.9)',
+                        borderWidth: 3,
+                        borderDash: [6, 4],
+                        pointRadius: 0
                     },
                     {
                         label: 'Pressione Max',
-                        data: dataToShow.map(r => r.massima),
-                        borderColor: '#ff3b30', // Rosso Apple
-                        backgroundColor: 'transparent',
+                        data: maxValues,
+                        borderColor: '#ff3b30',
                         borderWidth: 3,
                         tension: 0.3,
-                        yAxisID: 'y'
+                        pointBackgroundColor: maxPointColors,
+                        pointRadius: maxPointRadius
                     },
                     {
                         label: 'Pressione Min',
-                        data: dataToShow.map(r => r.minima),
-                        borderColor: '#ff9500', // Arancione Apple
-                        backgroundColor: 'transparent',
+                        data: minValues,
+                        borderColor: '#ff9500',
                         borderWidth: 3,
                         tension: 0.3,
-                        yAxisID: 'y'
+                        pointBackgroundColor: minPointColors,
+                        pointRadius: minPointRadius
                     },
                     {
                         label: 'BPM',
                         data: dataToShow.map(r => r.bpm),
-                        borderColor: '#007aff', // Blu Apple
-                        backgroundColor: 'rgba(0, 122, 255, 0.1)',
+                        borderColor: '#007aff',
                         borderWidth: 2,
                         fill: true,
-                        tension: 0.3,
-                        yAxisID: 'y'
+                        tension: 0.3
                     },
                     {
                         label: 'Temp (°C)',
                         data: dataToShow.map(r => r.temp),
-                        borderColor: '#28cd41', // Verde Apple
-                        backgroundColor: 'transparent',
+                        borderColor: '#28cd41',
                         borderWidth: 2,
-                        borderDash: [5, 5], 
+                        borderDash: [5, 5],
                         tension: 0.3,
-                        yAxisID: 'y1' 
+                        yAxisID: 'y1'
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: { 
-                        position: 'top', 
-                        labels: { 
-                            usePointStyle: true, 
-                            padding: 20,
-                            // Filtra le soglie dalla legenda per non affollarla, opzionale
-                            filter: function(item) {
-                                return !item.text.includes('Soglia');
-                            }
-                        } 
-                    }
-                },
                 scales: {
-                    y: { 
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: { display: true, text: 'Pressione / BPM' },
-                        beginAtZero: false 
-                    },
+                    y: { beginAtZero: false },
                     y1: {
-                        type: 'linear',
-                        display: true,
                         position: 'right',
-                        title: { display: true, text: 'Temperatura (°C)' },
-                        grid: { drawOnChartArea: false },
-                        suggestedMin: 35,
-                        suggestedMax: 40
+                        grid: { drawOnChartArea: false }
                     },
                     x: { display: false }
                 }
