@@ -3,35 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grafico Parametri Vitali</title>
+    <title>Grafico Parametri Vitali - Glass Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; background: #f4f6f9; color: #2c3e50; }
-        header { background: #2c3e50; color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; position: relative; }
-        .back-btn { position: absolute; left: 15px; top: 15px; color: white; text-decoration: none; font-size: 14px; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 5px; }
-        .container { padding: 15px; max-width: 1000px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        #status { margin-bottom: 15px; font-size: 14px; text-align: center; }
-        .controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        button { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; background: #3498db; color: white; transition: 0.2s; }
-        button:hover { background: #2980b9; }
-        canvas { width: 100% !important; height: 450px !important; }
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --apple-blue: #007aff;
+            --apple-red: #ff3b30;
+            --apple-orange: #ff9500;
+            --apple-green: #34c759;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            margin: 0; 
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
+            min-height: 100vh;
+            color: #1d1d1f; 
+        }
+
+        header { 
+            background: rgba(44, 62, 80, 0.8); 
+            backdrop-filter: blur(10px);
+            color: white; 
+            padding: 20px; 
+            text-align: center; 
+            font-size: 22px; 
+            font-weight: 600; 
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .back-btn { 
+            position: absolute; 
+            left: 20px; 
+            top: 50%;
+            transform: translateY(-50%);
+            color: white; 
+            text-decoration: none; 
+            font-size: 14px; 
+            background: rgba(255,255,255,0.15); 
+            padding: 8px 15px; 
+            border-radius: 12px; 
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--glass-border);
+            transition: 0.3s;
+        }
+
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
+
+        .container { 
+            padding: 20px; 
+            max-width: 1100px; 
+            margin: auto; 
+        }
+
+        #status { 
+            margin: 10px 0; 
+            font-size: 14px; 
+            text-align: center; 
+            font-weight: 500;
+        }
+
+        .controls { 
+            display: flex; 
+            justify-content: center; 
+            gap: 12px; 
+            margin-bottom: 25px; 
+            flex-wrap: wrap; 
+        }
+
+        button { 
+            padding: 10px 20px; 
+            border-radius: 14px; 
+            border: 1px solid var(--glass-border); 
+            cursor: pointer; 
+            font-weight: 600; 
+            background: var(--glass-bg); 
+            color: var(--apple-blue); 
+            backdrop-filter: blur(5px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        button:hover { 
+            transform: translateY(-2px);
+            background: var(--apple-blue);
+            color: white;
+            box-shadow: 0 8px 15px rgba(0, 122, 255, 0.3);
+        }
+
+        .card { 
+            background: var(--glass-bg); 
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding: 25px; 
+            border-radius: 24px; 
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1); 
+            margin-bottom: 30px; 
+        }
+
+        .legend-info {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-top: -10px;
+            margin-bottom: 20px;
+        }
+
+        canvas { width: 100% !important; height: 500px !important; }
     </style>
 </head>
 <body>
 
 <header>
-    <a href="javascript:history.back()" class="back-btn">← Indietro</a>
-    Andamento Parametri Vitali
+    <a href="javascript:history.back()" class="back-btn">← Home</a>
+    Analisi Salute
 </header>
 
 <div class="container">
-    <div id="status">Inizializzazione...</div>
+    <div id="status">Sincronizzazione...</div>
 
     <div class="controls">
-        <button onclick="updateChart('all')">Tutti i dati</button>
-        <button onclick="updateChart(30)">Ultimi 30gg</button>
-        <button onclick="updateChart(7)">Ultimi 7gg</button>
+        <button onclick="updateChart('all')">Tutto lo storico</button>
+        <button onclick="updateChart(30)">Ultimi 30 giorni</button>
+        <button onclick="updateChart(7)">Ultima settimana</button>
+    </div>
+
+    <div class="legend-info">
+        Nota: I punti più grandi indicano valori fuori soglia (Max > 140, Min > 90)
     </div>
 
     <div class="card">
@@ -44,7 +148,7 @@
     let healthChart = null;
     const config = JSON.parse(localStorage.getItem('gh_health_config'));
 
-    function setStatus(msg, color = 'black') {
+    function setStatus(msg, color = '#1d1d1f') {
         const statusEl = document.getElementById('status');
         statusEl.innerText = msg;
         statusEl.style.color = color;
@@ -52,11 +156,11 @@
 
     async function fetchData() {
         if (!config) {
-            setStatus("Configurazione GitHub mancante! Torna alla pagina principale.", "red");
+            setStatus("Configurazione mancante!", "#ff3b30");
             return;
         }
 
-        setStatus("Caricamento dati da GitHub...", "blue");
+        setStatus("Recupero dati in corso...", "#007aff");
         const url = `https://api.github.com/repos/${config.repo}/contents/dati.json`;
         
         try {
@@ -64,14 +168,15 @@
             if (res.ok) {
                 const data = await res.json();
                 records = JSON.parse(atob(data.content));
+                // Ordine cronologico per il grafico (X da sinistra a destra)
                 records.sort((a, b) => new Date(a.data + " " + a.ora) - new Date(b.data + " " + b.ora));
-                setStatus("Dati caricati correttamente", "green");
+                setStatus("Dati aggiornati", "#34c759");
                 updateChart('all');
             } else {
-                setStatus("Errore nel recupero dati", "red");
+                setStatus("Errore di connessione GitHub", "#ff3b30");
             }
         } catch (e) {
-            setStatus("Errore di rete", "red");
+            setStatus("Errore di rete", "#ff3b30");
         }
     }
 
@@ -85,18 +190,19 @@
             dataToShow = records.filter(r => new Date(r.data) >= cutoff);
         }
 
-        const labels = dataToShow.map(r => r.data + " " + r.ora);
-
-        const maxValues = dataToShow.map(r => r.massima);
-        const minValues = dataToShow.map(r => r.minima);
-
-        const maxPointColors = maxValues.map(v => v >= 140 ? '#ff0000' : '#ff3b30');
-        const minPointColors = minValues.map(v => v >= 90 ? '#ff8800' : '#ff9500');
-
-        const maxPointRadius = maxValues.map(v => v >= 140 ? 6 : 3);
-        const minPointRadius = minValues.map(v => v >= 90 ? 6 : 3);
-
+        // Asse X: Tutte le date e ore formattate
+        const labels = dataToShow.map(r => {
+            const d = new Date(r.data);
+            return d.toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit'}) + " " + r.ora;
+        });
+        
         if (healthChart) healthChart.destroy();
+
+        // Configurazione stile punti dinamici (Evidenzia fuori soglia)
+        const pointStyleMax = dataToShow.map(r => r.massima > 140 ? 8 : 4);
+        const pointBorderMax = dataToShow.map(r => r.massima > 140 ? 3 : 1);
+        const pointStyleMin = dataToShow.map(r => r.minima > 90 ? 8 : 4);
+        const pointBorderMin = dataToShow.map(r => r.minima > 90 ? 3 : 1);
 
         healthChart = new Chart(ctx, {
             type: 'line',
@@ -104,55 +210,113 @@
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Soglia Max',
-                        data: new Array(dataToShow.length).fill(140),
-                        borderColor: 'rgba(255,0,0,0.9)',
-                        borderWidth: 3,
-                        borderDash: [6, 4],
-                        pointRadius: 0
-                    },
-                    {
-                        label: 'Soglia Min',
-                        data: new Array(dataToShow.length).fill(90),
-                        borderColor: 'rgba(255,140,0,0.9)',
-                        borderWidth: 3,
-                        borderDash: [6, 4],
-                        pointRadius: 0
-                    },
-                    {
                         label: 'Pressione Max',
-                        data: maxValues,
+                        data: dataToShow.map(r => r.massima),
                         borderColor: '#ff3b30',
+                        backgroundColor: 'rgba(255, 59, 48, 0.1)',
                         borderWidth: 3,
-                        tension: 0.3,
-                        pointBackgroundColor: maxPointColors,
-                        pointRadius: maxPointRadius
+                        tension: 0.4,
+                        pointRadius: pointStyleMax,
+                        pointHoverRadius: 10,
+                        pointBorderWidth: pointBorderMax,
+                        pointBackgroundColor: 'white',
+                        yAxisID: 'y'
                     },
                     {
                         label: 'Pressione Min',
-                        data: minValues,
+                        data: dataToShow.map(r => r.minima),
                         borderColor: '#ff9500',
+                        backgroundColor: 'transparent',
                         borderWidth: 3,
-                        tension: 0.3,
-                        pointBackgroundColor: minPointColors,
-                        pointRadius: minPointRadius
+                        tension: 0.4,
+                        pointRadius: pointStyleMin,
+                        pointHoverRadius: 10,
+                        pointBorderWidth: pointBorderMin,
+                        pointBackgroundColor: 'white',
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Soglia Sistolica (140)',
+                        data: new Array(dataToShow.length).fill(140),
+                        borderColor: 'rgba(255, 59, 48, 0.2)',
+                        borderWidth: 1,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        fill: false
+                    },
+                    {
+                        label: 'Soglia Diastolica (90)',
+                        data: new Array(dataToShow.length).fill(90),
+                        borderColor: 'rgba(255, 149, 0, 0.2)',
+                        borderWidth: 1,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        fill: false
+                    },
+                    {
+                        label: 'Battiti (BPM)',
+                        data: dataToShow.map(r => r.bpm || r.pulsazioni),
+                        borderColor: '#007aff',
+                        backgroundColor: 'rgba(0, 122, 255, 0.05)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 3,
+                        yAxisID: 'y'
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { 
+                            usePointStyle: true, 
+                            font: { size: 12, weight: '600' },
+                            filter: (item) => !item.text.includes('Soglia')
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        titleColor: '#1d1d1f',
+                        bodyColor: '#1d1d1f',
+                        borderColor: '#ddd',
+                        borderWidth: 1,
+                        padding: 12,
+                        boxPadding: 5,
+                        usePointStyle: true,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) label += ': ';
+                                label += context.parsed.y;
+                                if (context.parsed.y > 140 && context.dataset.label.includes('Max')) label += ' ⚠️ ALTA';
+                                if (context.parsed.y > 90 && context.dataset.label.includes('Min')) label += ' ⚠️ ALTA';
+                                return label;
+                            }
+                        }
+                    }
+                },
                 scales: {
-                    y: { beginAtZero: false },
-                    x: { 
-                        display: true,
+                    y: { 
+                        beginAtZero: false,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        title: { display: true, text: 'Valori (mmHg / BPM)', font: { weight: '600' } }
+                    },
+                    x: {
+                        grid: { display: false },
                         ticks: {
                             maxRotation: 45,
                             minRotation: 45,
-                            autoSkip: true,
-                            maxTicksLimit: 10
+                            font: { size: 10 },
+                            autoSkip: false // Forza la visualizzazione di TUTTE le etichette
                         }
                     }
+                },
+                animations: {
+                    tension: { duration: 1000, easing: 'linear' }
                 }
             }
         });
