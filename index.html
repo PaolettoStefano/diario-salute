@@ -1,164 +1,249 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grafico Parametri Vitali</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; background: #f4f6f9; color: #2c3e50; }
-        header { background: #2c3e50; color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; position: relative; }
-        .back-btn { position: absolute; left: 15px; top: 15px; color: white; text-decoration: none; font-size: 14px; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 5px; }
-        .container { padding: 15px; max-width: 1000px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        #status { margin-bottom: 15px; font-size: 14px; text-align: center; }
-        .controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        button { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; background: #3498db; color: white; transition: 0.2s; }
-        button:hover { background: #2980b9; }
-        canvas { width: 100% !important; height: 450px !important; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoraggio Parametri Vitali</title>
+<style>
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; margin:0; background:#f4f6f9; }
+header { background:#2c3e50; color:white; padding:15px; text-align:center; font-size:20px; font-weight:bold; }
+.container { padding:15px; }
+button { padding:10px 15px; border-radius:8px; border:none; cursor:pointer; font-weight:600; margin-right:5px; margin-bottom:10px; }
+.primary { background:#3498db; color:white; }
+.success { background:#27ae60; color:white; }
+.export { background:#8e44ad; color:white; }
+.warning { background:#e67e22; color:white; }
+.danger { background:#e74c3c; color:white; }
+.table-container { overflow-x:auto; margin-top:15px; }
+table { width:100%; border-collapse:collapse; background:white; border-radius:10px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.05);}
+th, td { padding:8px; text-align:center; font-size:14px; }
+th { background:#34495e; color:white; }
+tr:nth-child(even) { background:#f2f2f2; }
+.month-header { background:#dfe6e9; font-weight:bold; text-align:left; padding:10px; font-size:14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-radius:8px; margin-top:10px; }
+.month-header:hover { background:#d0d7de; }
+.modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); justify-content:center; align-items:center; z-index:9999; }
+.modal-content { background:white; padding:25px; border-radius:16px; width:95%; max-width:500px; box-shadow:0 4px 12px rgba(0,0,0,0.2);}
+.modal-content h3 { margin-top:0; margin-bottom:15px; font-size:18px; text-align:center; color:#2c3e50;}
+input { width:100%; padding:10px; margin:5px 0 12px 0; border-radius:8px; border:1px solid #ccc; font-size:14px; background:#f9f9f9; transition:0.2s; }
+input:focus { border-color:#3498db; box-shadow:0 0 5px rgba(52,152,219,0.3); outline:none; }
+.flex-row { display:flex; gap:10px; flex-wrap:wrap; }
+.flex-row input { flex:1; min-width:100px; }
+.actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:10px; margin-top:10px; }
+#status { margin-bottom:10px; font-size:14px; }
+.color-red { color:#e74c3c; font-weight:bold; }
+.color-orange { color:#e67e22; font-weight:bold; }
+.color-blue { color:#3498db; font-weight:bold; }
+
+/* Collapsible GitHub setup */
+.collapsible { background:#ecf0f1; color:#2c3e50; cursor:pointer; padding:10px 15px; width:100%; border:none; text-align:left; outline:none; font-size:16px; border-radius:8px; margin-bottom:10px; }
+.active, .collapsible:hover { background:#d0d7de; }
+.content { padding:0 15px; max-height:0; overflow:hidden; transition:max-height 0.3s ease; background:#f9f9f9; border-radius:8px; }
+</style>
 </head>
 <body>
 
-<header>
-    <a href="javascript:history.back()" class="back-btn">← Indietro</a>
-    Andamento Parametri Vitali
-</header>
+<header>Monitoraggio Parametri Vitali</header>
 
 <div class="container">
-    <div id="status">Inizializzazione...</div>
+  <div id="status">Stato: <span id="statusText">Inizializzazione...</span></div>
 
-    <div class="controls">
-        <button onclick="updateChart('all')">Tutti i dati</button>
-        <button onclick="updateChart(30)">Ultimi 30gg</button>
-        <button onclick="updateChart(7)">Ultimi 7gg</button>
+  <button type="button" class="collapsible">⚙️ Configurazione GitHub</button>
+  <div class="content" id="setupArea">
+    <input type="password" id="ghToken" placeholder="Personal Access Token">
+    <input type="text" id="ghRepo" placeholder="utente/nome-repo">
+    <button class="primary" onclick="saveSetup()">Connetti</button>
+    <p style="font-size:12px;color:#555;">Assicurati che il file <b>dati.json</b> esista nella repo o verrà creato automaticamente.</p>
+  </div>
+
+  <div class="actions">
+    <button class="primary" onclick="openModal()">+ Inserisci</button>
+    <button class="primary" onclick="window.location.href='graphic.html'" style="background:#2980b9;">📊 Visualizza Grafico</button>
+    <button class="success" onclick="ghFetch()">🔄 Aggiorna dati</button>
+    <button class="export" onclick="exportCSV()">Esporta Excel</button>
+  </div>
+
+  <div id="tableContainer" class="table-container"></div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h3 id="modalTitle">Inserisci Parametri</h3>
+    <label>Data</label><input type="date" id="data">
+    <label>Ora</label><input type="time" id="ora">
+
+    <div class="flex-row">
+      <div>
+        <label>Pressione Massima</label><input type="number" id="massima">
+      </div>
+      <div>
+        <label>Pressione Minima</label><input type="number" id="minima">
+      </div>
     </div>
 
-    <div class="card">
-        <canvas id="healthChart"></canvas>
+    <div class="flex-row">
+      <div>
+        <label>Pulsazioni</label><input type="number" id="pulsazioni">
+      </div>
+      <div>
+        <label>SP02 (%)</label><input type="number" id="spo2">
+      </div>
     </div>
+
+    <div class="flex-row">
+      <div>
+        <label>BPM</label><input type="number" id="bpm">
+      </div>
+      <div>
+        <label>Temperatura (°C)</label><input type="number" step="0.1" id="temp">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button onclick="closeModal()">Annulla</button>
+      <button class="success" onclick="saveData()">Salva</button>
+    </div>
+  </div>
 </div>
 
 <script>
-    let records = [];
-    let healthChart = null;
-    const config = JSON.parse(localStorage.getItem('gh_health_config'));
+let records=[], editIndex=-1, config=JSON.parse(localStorage.getItem('gh_health_config'))||null, fileSha="";
 
-    function setStatus(msg, color = 'black') {
-        const statusEl = document.getElementById('status');
-        statusEl.innerText = msg;
-        statusEl.style.color = color;
+function saveSetup(){
+  const token=document.getElementById('ghToken').value.trim();
+  const repo=document.getElementById('ghRepo').value.trim();
+  if(token && repo){ localStorage.setItem('gh_health_config', JSON.stringify({token,repo})); location.reload(); }
+}
+
+function setStatus(msg,color='black'){ document.getElementById('statusText').innerText=msg; document.getElementById('statusText').style.color=color; }
+
+async function ghFetch(){
+  if(!config) return;
+  setStatus("Caricamento dati...","blue");
+  const url=`https://api.github.com/repos/${config.repo}/contents/dati.json`;
+  try{
+    const res=await fetch(url,{ headers:{ Authorization:`token ${config.token}`} });
+    if(res.ok){
+      const data=await res.json();
+      fileSha=data.sha;
+      records=JSON.parse(atob(data.content));
+      // Ordina per data e ora dal più recente al più vecchio
+      records.sort((a,b)=> new Date(b.data+" "+b.ora) - new Date(a.data+" "+a.ora));
+      renderTable();
+      setStatus("Dati caricati","green");
+    } else if(res.status===404){
+      setStatus("File dati.json non trovato, verrà creato...","orange");
+      await createEmptyJSON();
+    } else{
+      setStatus("Errore fetch dati","red");
     }
+  } catch(e){ setStatus("Offline o errore di rete","red"); }
+}
 
-    async function fetchData() {
-        if (!config) {
-            setStatus("Configurazione GitHub mancante! Torna alla pagina principale.", "red");
-            return;
-        }
+async function createEmptyJSON(){
+  if(!config) return;
+  const url=`https://api.github.com/repos/${config.repo}/contents/dati.json`;
+  const body={ message:"Creazione file dati.json", content:btoa("[]") };
+  try{
+    const res=await fetch(url,{ method:"PUT", headers:{ Authorization:`token ${config.token}`, "Content-Type":"application/json"}, body:JSON.stringify(body) });
+    if(res.ok){ const data=await res.json(); fileSha=data.content.sha; records=[]; renderTable(); setStatus("File dati.json creato con successo","green"); }
+    else{ setStatus("Errore creazione file","red"); }
+  } catch(e){ setStatus("Errore creazione file","red"); }
+}
 
-        setStatus("Caricamento dati da GitHub...", "blue");
-        const url = `https://api.github.com/repos/${config.repo}/contents/dati.json`;
-        
-        try {
-            const res = await fetch(url, { headers: { Authorization: `token ${config.token}` } });
-            if (res.ok) {
-                const data = await res.json();
-                records = JSON.parse(atob(data.content));
-                records.sort((a, b) => new Date(a.data + " " + a.ora) - new Date(b.data + " " + b.ora));
-                setStatus("Dati caricati correttamente", "green");
-                updateChart('all');
-            } else {
-                setStatus("Errore nel recupero dati", "red");
-            }
-        } catch (e) {
-            setStatus("Errore di rete", "red");
-        }
-    }
+async function ghPush(){
+  if(!config) return;
+  setStatus("Salvataggio dati...","blue");
+  const url=`https://api.github.com/repos/${config.repo}/contents/dati.json`;
+  const body={ message:"Aggiornamento "+new Date().toLocaleString(), content:btoa(unescape(encodeURIComponent(JSON.stringify(records,null,2)))), sha:fileSha };
+  try{
+    const res=await fetch(url,{ method:"PUT", headers:{ Authorization:`token ${config.token}`, "Content-Type":"application/json"}, body:JSON.stringify(body) });
+    if(res.ok){ const data=await res.json(); fileSha=data.content.sha; setStatus("Dati salvati su GitHub","green"); }
+    else{ setStatus("Errore salvataggio","red"); }
+  } catch(e){ setStatus("Errore salvataggio","red"); }
+}
 
-    function updateChart(filter) {
-        const ctx = document.getElementById('healthChart').getContext('2d');
-        let dataToShow = records;
+function openModal(index=-1){
+  const now=new Date();
+  if(index>=0){ const r=records[index]; data.value=r.data; ora.value=r.ora; massima.value=r.massima; minima.value=r.minima; pulsazioni.value=r.pulsazioni; temp.value=r.temp; spo2.value=r.spo2; bpm.value=r.bpm; modalTitle.innerText="Modifica Parametri"; editIndex=index; }
+  else{ data.value=now.toISOString().split('T')[0]; ora.value=now.toTimeString().slice(0,5); modalTitle.innerText="Inserisci Parametri"; editIndex=-1; document.querySelectorAll("#modal input").forEach(i=>{ if(i.id!=="data" && i.id!=="ora") i.value=""; }); }
+  modal.style.display="flex";
+}
 
-        if (filter !== 'all') {
-            const cutoff = new Date();
-            cutoff.setDate(cutoff.getDate() - filter);
-            dataToShow = records.filter(r => new Date(r.data) >= cutoff);
-        }
+function closeModal(){ modal.style.display="none"; }
 
-        const labels = dataToShow.map(r => r.data + " " + r.ora);
+function saveData(){
+  const r={ data:data.value, ora:ora.value, massima:massima.value, minima:minima.value, pulsazioni:pulsazioni.value, spo2:spo2.value, bpm:bpm.value, temp:temp.value };
+  if(editIndex>=0) records[editIndex]=r; else records.push(r);
+  // Ordina nuovamente dopo inserimento
+  records.sort((a,b)=> new Date(b.data+" "+b.ora) - new Date(a.data+" "+a.ora));
+  renderTable(); ghPush(); closeModal();
+}
 
-        const maxValues = dataToShow.map(r => r.massima);
-        const minValues = dataToShow.map(r => r.minima);
+function deleteRecord(i){ if(confirm("Eliminare questo record?")){ records.splice(i,1); renderTable(); ghPush(); } }
 
-        const maxPointColors = maxValues.map(v => v >= 140 ? '#ff0000' : '#ff3b30');
-        const minPointColors = minValues.map(v => v >= 90 ? '#ff8800' : '#ff9500');
+function getValueColor(type,val){
+  if(type==='max' && val>=140) return "color-red"; if(type==='max' && val>=130) return "color-orange";
+  if(type==='min' && val>=90) return "color-red"; if(type==='min' && val>=85) return "color-orange";
+  if(type==='bpm' && val>100) return "color-red"; if(type==='bpm' && val<50) return "color-orange";
+  return "color-blue";
+}
 
-        const maxPointRadius = maxValues.map(v => v >= 140 ? 6 : 3);
-        const minPointRadius = minValues.map(v => v >= 90 ? 6 : 3);
+function toggleMonth(header) {
+  const table = header.nextElementSibling;
+  const isHidden = table.style.display === "none";
+  table.style.display = isHidden ? "table" : "none";
+  header.querySelector('.arrow').innerText = isHidden ? "▼" : "▶";
+}
 
-        if (healthChart) healthChart.destroy();
+function renderTable(){
+  const container=document.getElementById("tableContainer"); container.innerHTML="";
+  if(records.length===0){ container.innerHTML="<p>Nessun dato registrato</p>"; return; }
 
-        healthChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Soglia Max',
-                        data: new Array(dataToShow.length).fill(140),
-                        borderColor: 'rgba(255,0,0,0.9)',
-                        borderWidth: 3,
-                        borderDash: [6, 4],
-                        pointRadius: 0
-                    },
-                    {
-                        label: 'Soglia Min',
-                        data: new Array(dataToShow.length).fill(90),
-                        borderColor: 'rgba(255,140,0,0.9)',
-                        borderWidth: 3,
-                        borderDash: [6, 4],
-                        pointRadius: 0
-                    },
-                    {
-                        label: 'Pressione Max',
-                        data: maxValues,
-                        borderColor: '#ff3b30',
-                        borderWidth: 3,
-                        tension: 0.3,
-                        pointBackgroundColor: maxPointColors,
-                        pointRadius: maxPointRadius
-                    },
-                    {
-                        label: 'Pressione Min',
-                        data: minValues,
-                        borderColor: '#ff9500',
-                        borderWidth: 3,
-                        tension: 0.3,
-                        pointBackgroundColor: minPointColors,
-                        pointRadius: minPointRadius
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: false },
-                    x: { 
-                        display: true,
-                        ticks: {
-                            maxRotation: 45,
-                            minRotation: 45,
-                            autoSkip: true,
-                            maxTicksLimit: 10
-                        }
-                    }
-                }
-            }
-        });
-    }
+  let grouped={}; records.forEach((r,i)=>{ const month=r.data.substring(0,7); if(!grouped[month]) grouped[month]=[]; grouped[month].push({...r,index:i}); });
 
-    fetchData();
+  const sortedMonths = Object.keys(grouped).sort().reverse();
+
+  sortedMonths.forEach((monthKey, idx)=>{
+    const dateObj = new Date(monthKey + "-01");
+    const monthName = new Intl.DateTimeFormat('it-IT', { month: 'long', year: 'numeric' }).format(dateObj);
+    const formattedTitle = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+    const div=document.createElement("div"); 
+    div.className="month-header"; 
+    div.innerHTML = `<span>${formattedTitle} (${grouped[monthKey].length} misurazioni)</span> <span class="arrow">${idx === 0 ? "▼" : "▶"}</span>`;
+    div.onclick = function() { toggleMonth(this); };
+    container.appendChild(div);
+
+    const table=document.createElement("table");
+    // Lascia aperto solo il primo mese (quello più recente)
+    table.style.display = idx === 0 ? "table" : "none";
+    
+    table.innerHTML=`<tr>
+      <th>Data</th><th>Ora</th><th>Max</th><th>Min</th><th>Puls</th><th>SP02</th><th>BPM</th><th>Temp</th><th>Azioni</th>
+    </tr>`;
+    grouped[monthKey].forEach(r=>{
+      table.innerHTML+=`<tr>
+        <td>${r.data}</td><td>${r.ora}</td>
+        <td class="${getValueColor('max',r.massima)}">${r.massima}</td>
+        <td class="${getValueColor('min',r.minima)}">${r.minima}</td>
+        <td>${r.pulsazioni}</td><td>${r.spo2}</td>
+        <td class="${getValueColor('bpm',r.bpm)}">${r.bpm}</td>
+        <td>${r.temp}</td>
+        <td><button class="warning" onclick="openModal(${r.index})">✏️</button>
+            <button class="danger" onclick="deleteRecord(${r.index})">🗑️</button></td>
+      </tr>`;
+    });
+    container.appendChild(table);
+  });
+}
+
+function exportCSV(){ let csv="Data,Ora,Massima,Minima,Pulsazioni,SP02,BPM,Temp\n"; records.forEach(r=>{ csv+=`${r.data},${r.ora},${r.massima},${r.minima},${r.pulsazioni},${r.spo2},${r.bpm},${r.temp}\n`; }); const blob=new Blob([csv],{type:"text/csv"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="parametri.csv"; a.click(); }
+
+// Collapsible GitHub
+var coll = document.getElementsByClassName("collapsible")[0]; coll.addEventListener("click", function(){ this.classList.toggle("active"); var content = this.nextElementSibling; content.style.maxHeight = content.style.maxHeight ? null : content.scrollHeight + "px"; });
+
+// inizializzazione
+if(config){ ghFetch(); } else { setStatus("Inserisci token e repo per attivare GitHub","orange"); }
 </script>
 
 </body>
