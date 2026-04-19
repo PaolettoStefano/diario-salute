@@ -1,6 +1,13 @@
 [
   {
     "data": "2026-04-19",
+    "ora": "20:20",
+    "massima": 125,
+    "minima": 76,
+    "pulsazioni": 62
+  },
+  {
+    "data": "2026-04-19",
     "ora": "13:27",
     "massima": 111,
     "minima": 70,
